@@ -1,0 +1,39 @@
+{
+  "name": "musik-terbuka",
+  "version": "1.0.0",
+  "description": "OpenMusic",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./src/server.js",
+    "start": "NODE_ENV=production node ./src/server.js",
+    "fix": "npx eslint ./src --fix",
+    "lint": "npx eslint ./src",
+    "migrate": "npx prisma migrate deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kuukuuuruyuk/musik-terbuka.git"
+  },
+  "author": "Baroen Sudarman, Kuku Ruyuk",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/kuukuuuruyuk/musik-terbuka/issues"
+  },
+  "homepage": "https://github.com/kuukuuuruyuk/musik-terbuka#readme",
+  "devDependencies": {
+    "eslint": "^8.23.1",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.26.0",
+    "nodemon": "^2.0.19",
+    "prisma": "^4.3.1"
+  },
+  "dependencies": {
+    "@hapi/hapi": "^20.2.2",
+    "@prisma/client": "^4.3.1",
+    "dotenv": "^16.0.2",
+    "joi": "^17.6.0",
+    "nanoid": "^3.3.4",
+    "pg": "^8.8.0"
+  }
+}
