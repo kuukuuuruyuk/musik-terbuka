@@ -47,7 +47,7 @@ async function bootstrap() {
   ]);
 
   await server.start();
-  console.info(`Server berjalan pada ${server.info.uri}`);
+  console.info(`Server berjalan pada ${server.info.uri} ${process.env.HOST}`);
 }
 
 // Starting app

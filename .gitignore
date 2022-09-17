@@ -107,4 +107,4 @@ package-lock.json
 
 /.vscode
 
-/prisma/migrations
+prisma/
