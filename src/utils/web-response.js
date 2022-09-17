@@ -1,4 +1,4 @@
-const ClientError = require('../exception/client-error');
+const {ClientError} = require('../exception/client-error');
 
 /**
  * Funtion for handle failed response

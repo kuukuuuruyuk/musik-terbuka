@@ -14,4 +14,4 @@ class ClientError extends Error {
   }
 }
 
-module.exports = ClientError;
+module.exports = {ClientError};

@@ -15,31 +15,33 @@ class SongRoute {
    * @return {any} hapi server route
    */
   routes() {
+    const h = this._h;
+
     return [
       {
         method: 'POST',
         path: '/songs',
-        handler: this._h.postSongHandler,
+        handler: h.postSongHandler,
       },
       {
         method: 'GET',
         path: '/songs',
-        handler: this._h.getSongsHandler,
+        handler: h.getSongsHandler,
       },
       {
         method: 'GET',
         path: '/songs/{id}',
-        handler: this._h.getSongByIdHandler,
+        handler: h.getSongByIdHandler,
       },
       {
         method: 'PUT',
         path: '/songs/{id}',
-        handler: this._h.putSongByIdHandler,
+        handler: h.putSongByIdHandler,
       },
       {
         method: 'DELETE',
         path: '/songs/{id}',
-        handler: this._h.deleteSongByIdHandler,
+        handler: h.deleteSongByIdHandler,
       },
     ];
   }
