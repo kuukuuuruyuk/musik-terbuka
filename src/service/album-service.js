@@ -20,13 +20,12 @@ class AlbumService {
    */
   async storeAlbum({name, year}) {
     const id = nanoid();
-    const updatedAt = new Date();
     const queryText = `
-    INSERT INTO albums(id, name, year, updated_at)
-    VALUES($1, $2, $3, $4)
+    INSERT INTO albums(id, name, year)
+    VALUES($1, $2, $3)
     RETURNING id
     `;
-    const queryValues = [`album-${id}`, name, year, updatedAt];
+    const queryValues = [`album-${id}`, name, year];
     const res = await this._db.query(queryText, queryValues);
 
     if (!res.rows[0].id) throw new InvariantError('Gagal menambahakan album');
@@ -66,12 +65,10 @@ class AlbumService {
     const queryText = `
     UPDATE albums
     SET name = $1,
-      year = $2,
-      updated_at = $3
-    WHERE id = $4
+      year = $2
+    WHERE id = $3
     `;
-    const updatedAt = new Date();
-    const queryValues = [name, year, updatedAt, id];
+    const queryValues = [name, year, id];
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) throw new NotFoundError('Cannot find album ID!');

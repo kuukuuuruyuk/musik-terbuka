@@ -27,7 +27,6 @@ class SongService {
     duration,
     albumId,
   }) {
-    const updatedAt = new Date();
     const id = nanoid();
     const queryText = `
     INSERT INTO songs(
@@ -37,10 +36,9 @@ class SongService {
       performer,
       genre,
       duration,
-      album_id,
-      updated_at
+      album_id
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id
     `;
     const queryValues = [
@@ -51,7 +49,6 @@ class SongService {
       genre,
       duration,
       albumId,
-      updatedAt,
     ];
     const result = await this._db.query(queryText, queryValues);
 
@@ -132,7 +129,7 @@ class SongService {
       performer,
       genre,
       duration,
-      album_id as albumId
+      album_id
     FROM songs
     WHERE id = $1
     `;
@@ -148,7 +145,7 @@ class SongService {
       performer: item.performer,
       genre: item.genre,
       duration: item.duration,
-      albumId: item.albumId,
+      albumId: item.album_id,
     }))[0];
 
     return song;
@@ -161,7 +158,9 @@ class SongService {
    */
   async getSongsByAlbumId(albumId) {
     const queryText = `
-    SELECT id, title, performer
+    SELECT id,
+      title,
+      performer
     FROM songs
     WHERE album_id = $1
     `;
