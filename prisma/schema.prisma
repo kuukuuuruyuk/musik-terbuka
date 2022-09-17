@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://postgres:1234567s@localhost:5432/musikterbukadb_prod?schema=public"
 }
 
 model Album {
