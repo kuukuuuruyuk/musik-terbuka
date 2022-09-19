@@ -1,34 +1,15 @@
 // menginpor dotend dan menjalankan konfigurasinya
 require('dotenv').config();
 
-const {Pool} = require('pg');
 const Hapi = require('@hapi/hapi');
 const hapiAuthJwt = require('@hapi/jwt');
-
-// Plugin api hapi server register
-const api = require('./api');
-
-// Services
-const {AlbumService} = require('./service/album-service');
-const {albumValidator} = require('./validator/album/album-validator');
-
-const {SongService} = require('./service/song-service');
-const {songValidator} = require('./validator/song/song-validator');
+const {appServer} = require('./app');
 
 /**
  * Method for handle starting the app
  */
 async function bootstrap() {
-  const {
-    albumApi,
-    songApi,
-    userApi,
-    playlistApi,
-    authenticationApi,
-  } = api();
-  const pool = new Pool();
-  const albumService = new AlbumService(pool);
-  const songService = new SongService(pool);
+  // Init config hapi server
   const _server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
@@ -39,13 +20,11 @@ async function bootstrap() {
 
   // Regis eksternal plugin
   await _server.register([
-    {
-      plugin: hapiAuthJwt,
-    },
+    {plugin: hapiAuthJwt},
   ]);
 
-  // mendefinisikan strategy autentikasi jwt
-  _server.auth.strategy('musikterbuka_jwt', 'jwt', {
+  // Mendefinisikan strategy autentikasi jwt
+  _server.auth.strategy('musicterbuka_jwt', 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
       aud: false,
@@ -61,48 +40,15 @@ async function bootstrap() {
     }),
   });
 
-  // Regis local plugin
-  await _server.register([
-    {
-      plugin: {...songApi},
-      options: {
-        service: {songService, albumService},
-        validator: {songValidator, albumValidator},
-      },
-    },
-    {
-      plugin: {...albumApi},
-      options: {
-        service: {songService, albumService},
-        validator: {songValidator, albumValidator},
-      },
-    },
-    {
-      plugin: {...userApi},
-      options: {
-        service: {},
-        validator: {},
-      },
-    },
-    {
-      plugin: {...playlistApi},
-      options: {
-        service: {},
-        validator: {},
-      },
-    },
-    {
-      plugin: {...authenticationApi},
-      options: {
-        service: {},
-        validator: {},
-      },
-    },
-  ]);
+  // App server
+  await appServer(_server);
 
+  // Starting server
   await _server.start();
+
+  // Show info server on app run
   console.log({
-    info: `Server berjalan pada ${_server.info.uri} ${process.env.NODE_ENV}`,
+    i: `Server berjalan pada ${_server.info.uri} ${process.env.NODE_ENV}`,
   });
 }
 

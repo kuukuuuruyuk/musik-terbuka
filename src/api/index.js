@@ -1,17 +1,13 @@
 const {AlbumHandler} = require('./album/album-handler');
 const {AlbumRoute} = require('./album/album-routes');
-
 const {
   AuthenticationHandler,
 } = require('./authentication/authentication-handler');
 const {AuthenticationRoute} = require('./authentication/authentication-routes');
-
 const {PlaylistHandler} = require('./playlist/playlist-handler');
 const {PlaylistRoute} = require('./playlist/playlist-routes');
-
 const {SongHandler} = require('./song/song-handler');
 const {SongRoute} = require('./song/song-routes');
-
 const {UserHandler} = require('./user/user-handler');
 const {UserRoute} = require('./user/user-routes');
 

@@ -30,10 +30,13 @@ class AlbumHandler {
     try {
       const {payload} = request;
       const {albumValidator: _albumValidator} = this._validator;
+
       await _albumValidator.validateAlbumPayload(payload);
+
       const {name, year} = payload;
       const {albumService: _albumService} = this._service;
       const albumId = await _albumService.storeAlbum({name, year});
+
       const _response = h.response({
         status: 'success',
         data: {albumId},
@@ -62,13 +65,11 @@ class AlbumHandler {
       } = this._service;
       const album = await _albumService.getAlbumById(id);
       const songs = await _songService.getSongsByAlbumId(id);
+
       const _response = h.response({
         status: 'success',
         data: {
-          album: {
-            ...album,
-            songs,
-          },
+          album: {...album, songs},
         },
       });
 
@@ -90,10 +91,14 @@ class AlbumHandler {
     try {
       const {params, payload} = request;
       const {albumValidator: _albumValidator} = this._validator;
+
       await _albumValidator.validateAlbumPayload(payload);
+
       const {id} = params;
       const {albumService: _albumService} = this._service;
+
       await _albumService.updateAlbumById(id, payload);
+
       const _response = h.response({
         status: 'success',
         message: 'Album has beed updated!',
@@ -117,7 +122,9 @@ class AlbumHandler {
     try {
       const {id} = request.params;
       const {albumService: _albumService} = this._service;
+
       await _albumService.deleteAlbumById(id);
+
       const _response = h.response({
         status: 'success',
         message: 'Album has beed deleted!',

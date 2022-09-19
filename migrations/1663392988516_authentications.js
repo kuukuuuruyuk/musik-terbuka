@@ -8,16 +8,12 @@ exports.up = (pgm) => {
       type: 'varchar(60)',
       primaryKey: true,
     },
-    token: {
+    access_token: {
       type: 'text',
       notNull: true,
     },
     refresh_token: {
       type: 'text',
-      notNull: true,
-    },
-    expire_date: {
-      type: 'timestamp',
       notNull: true,
     },
     user_id: {

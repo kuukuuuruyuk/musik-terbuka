@@ -1,12 +1,15 @@
 const Joi = require('joi');
 
 const authenticationPayloadSchema = Joi.object({
-  title: Joi.string().required(),
-  year: Joi.number().integer().min(1900).max(2021).required(),
-  performer: Joi.string().required(),
-  genre: Joi.string().required(),
-  duration: Joi.number().integer(),
-  albumId: Joi.string(),
+  username: Joi.string().required(),
+  password: Joi.string().required(),
 });
 
-module.exports = {authenticationPayloadSchema};
+const authTokenPayloadSchema = Joi.object({
+  refreshToken: Joi.string().required(),
+});
+
+module.exports = {
+  authenticationPayloadSchema,
+  authTokenPayloadSchema,
+};

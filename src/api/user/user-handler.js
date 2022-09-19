@@ -1,3 +1,5 @@
+const {failedWebResponse} = require('../../utils/web-response');
+
 /**
  * User handler
  */
@@ -16,14 +18,30 @@ class UserHandler {
 
   /**
    * Menambahkan pengguna/user baru
-   * @param {Request} _request request body
+   * @param {Request} request request body
    * @param {any} h hapi server handler
-   * @return {any}; return json
+   * @return {any} return json
    */
-  postUserHandler(_request, h) {
-    return h.response({
-      status: 'Success',
-    });
+  async postUserHandler(request, h) {
+    try {
+      const {payload} = request;
+      const {userValidator} = this._validator;
+
+      userValidator.validateUserPayload(payload);
+
+      const {userService} = this._service;
+      const userId = await userService.storeUser(payload);
+
+      const _response = h.response({
+        status: 'success',
+        data: {userId},
+      });
+
+      _response.code(201);
+      return _response;
+    } catch (error) {
+      return failedWebResponse(error, h);
+    }
   }
 }
 
