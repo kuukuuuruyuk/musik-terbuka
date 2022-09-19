@@ -1,4 +1,4 @@
-const ClientError = require('./client-error');
+const {ClientError} = require('./client-error');
 
 /**
  * Class for handle not found errror
@@ -14,4 +14,4 @@ class NotFoundError extends ClientError {
   }
 }
 
-module.exports = NotFoundError;
+module.exports = {NotFoundError};

@@ -1,4 +1,4 @@
-const ClientError = require('./client-error');
+const {ClientError} = require('./client-error');
 
 /**
  * Clas Form andler invarian error
@@ -14,4 +14,4 @@ class InvariantError extends ClientError {
   }
 }
 
-module.exports = InvariantError;
+module.exports = {InvariantError};

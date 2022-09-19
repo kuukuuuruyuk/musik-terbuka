@@ -4,7 +4,7 @@
 class AlbumRoute {
   /**
    * Method construcktor for album route
-   * @param {*} handler props handler param
+   * @param {any} handler props handler param
    */
   constructor(handler) {
     this._h = handler;
@@ -15,26 +15,28 @@ class AlbumRoute {
    * @return {ServerRoute[]} route data
    */
   routes() {
+    const h = this._h;
+
     return [
       {
         method: 'POST',
         path: '/albums',
-        handler: this._h.postAlbumHandler,
+        handler: h.postAlbumHandler,
       },
       {
         method: 'GET',
         path: '/albums/{id}',
-        handler: this._h.getAlbumByIdHandler,
+        handler: h.getAlbumByIdHandler,
       },
       {
         method: 'PUT',
         path: '/albums/{id}',
-        handler: this._h.putAlbumByIdHandler,
+        handler: h.putAlbumByIdHandler,
       },
       {
         method: 'DELETE',
         path: '/albums/{id}',
-        handler: this._h.deleteAlbumByIdHandler,
+        handler: h.deleteAlbumByIdHandler,
       },
     ];
   }

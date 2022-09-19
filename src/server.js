@@ -1,27 +1,16 @@
 // menginpor dotend dan menjalankan konfigurasinya
 require('dotenv').config();
 
-const {Pool} = require('pg');
 const Hapi = require('@hapi/hapi');
-
-// Plugin api hapi server register
-const api = require('./api');
-
-const {AlbumService} = require('./service/album-service');
-const {albumValidator} = require('./validator/album/album-validator');
-const {SongService} = require('./service/song-service');
-const {songValidator} = require('./validator/song/song-validator');
+const hapiAuthJwt = require('@hapi/jwt');
+const {appServer} = require('./app');
 
 /**
  * Method for handle starting the app
  */
 async function bootstrap() {
-  const {albumApi, songApi} = api();
-  const pool = new Pool();
-  const albumService = new AlbumService(pool);
-  const songService = new SongService(pool);
-
-  const server = Hapi.server({
+  // Init config hapi server
+  const _server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
     routes: {
@@ -29,25 +18,38 @@ async function bootstrap() {
     },
   });
 
-  await server.register([
-    {
-      plugin: {...songApi},
-      options: {
-        service: {songService, albumService},
-        validator: {songValidator, albumValidator},
-      },
-    },
-    {
-      plugin: {...albumApi},
-      options: {
-        service: {songService, albumService},
-        validator: {songValidator, albumValidator},
-      },
-    },
+  // Regis eksternal plugin
+  await _server.register([
+    {plugin: hapiAuthJwt},
   ]);
 
-  await server.start();
-  console.info(`Server berjalan pada ${server.info.uri} ${process.env.HOST}`);
+  // Mendefinisikan strategy autentikasi jwt
+  _server.auth.strategy('musicterbuka_jwt', 'jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+    },
+    validate: (artifacts) => ({
+      isValid: true,
+      credentials: {
+        id: artifacts.decoded.payload.id,
+      },
+    }),
+  });
+
+  // App server
+  await appServer(_server);
+
+  // Starting server
+  await _server.start();
+
+  // Show info server on app run
+  console.log({
+    i: `Server berjalan pada ${_server.info.uri} ${process.env.NODE_ENV}`,
+  });
 }
 
 // Starting app

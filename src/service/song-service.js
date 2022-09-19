@@ -1,6 +1,6 @@
 const {nanoid} = require('nanoid');
-const InvariantError = require('../exception/invariant-error');
-const NotFoundError = require('../exception/not-found-error');
+const {InvariantError} = require('../exception/invariant-error');
+const {NotFoundError} = require('../exception/not-found-error');
 
 /**
  * Song service
@@ -29,16 +29,14 @@ class SongService {
   }) {
     const id = nanoid();
     const queryText = `
-    INSERT INTO songs(
-      id,
+    INSERT INTO songs(id,
       title,
       year,
       performer,
       genre,
       duration,
       album_id
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id
     `;
     const queryValues = [
@@ -122,8 +120,7 @@ class SongService {
    */
   async getSongById(id) {
     const queryText = `
-    SELECT
-      id,
+    SELECT id,
       title,
       year,
       performer,

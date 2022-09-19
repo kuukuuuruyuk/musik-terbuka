@@ -1,6 +1,6 @@
 const {nanoid} = require('nanoid');
-const InvariantError = require('../exception/invariant-error');
-const NotFoundError = require('../exception/not-found-error');
+const {InvariantError} = require('../exception/invariant-error');
+const {NotFoundError} = require('../exception/not-found-error');
 
 /**
  * Album service
@@ -21,8 +21,10 @@ class AlbumService {
   async storeAlbum({name, year}) {
     const id = nanoid();
     const queryText = `
-    INSERT INTO albums(id, name, year)
-    VALUES($1, $2, $3)
+    INSERT INTO albums(id,
+      name,
+      year
+    ) VALUES($1, $2, $3)
     RETURNING id
     `;
     const queryValues = [`album-${id}`, name, year];

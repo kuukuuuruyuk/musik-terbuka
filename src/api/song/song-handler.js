@@ -30,8 +30,11 @@ class SongHandler {
   async postSongHandler(request, h) {
     try {
       const {payload} = request;
-      const {songValidator: _songValidator} = this._validator;
-      await _songValidator.validateSongPayload(payload);
+      const {songValidator} = this._validator;
+
+      await songValidator.validateSongPayload(payload);
+
+      const {songService: _songService} = this._service;
       const {
         title,
         year,
@@ -40,7 +43,7 @@ class SongHandler {
         duration,
         albumId,
       } = payload;
-      const {songService: _songService} = this._service;
+
       const songId = await _songService.storeSong({
         title,
         year,
@@ -49,6 +52,7 @@ class SongHandler {
         duration,
         albumId,
       });
+
       const _response = h.response({
         status: 'success',
         message: 'Lagu berhasil ditambahkan',
@@ -72,10 +76,15 @@ class SongHandler {
    */
   async getSongsHandler(request, h) {
     try {
+      const {songValidator} = this._validator;
+
+      await songValidator.validateSongPayload({});
+
       const {query} = request;
-      const {title, performer} = query;
       const {songService: _songService} = this._service;
+      const {title, performer} = query;
       const songs = await _songService.getSongs({title, performer});
+
       const _response = h.response({
         status: 'success',
         data: {songs},
@@ -96,9 +105,10 @@ class SongHandler {
    */
   async getSongByIdHandler(request, h) {
     try {
-      const {id: songId} = request.params;
       const {songService: _songService} = this._service;
+      const {id: songId} = request.params;
       const song = await _songService.getSongById(songId);
+
       const _response = h.response({
         status: 'success',
         data: {song},
@@ -124,7 +134,9 @@ class SongHandler {
       _songValidator.validateSongPayload(payload);
       const {id: songId} = params;
       const {songService: _songService} = this._service;
+
       await _songService.updateSongById(songId, payload);
+
       const _response = h.response({
         status: 'success',
         message: 'song has been updated!',
@@ -147,7 +159,9 @@ class SongHandler {
     try {
       const {id: songId} = request.params;
       const {songService: _songService} = this._service;
+
       await _songService.deleteSongById(songId);
+
       const _response = h.response({
         status: 'success',
         message: 'song has been deleted!',

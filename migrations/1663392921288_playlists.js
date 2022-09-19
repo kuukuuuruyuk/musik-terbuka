@@ -3,7 +3,7 @@
 exports.shorthands = undefined;
 
 exports.up = (pgm) => {
-  pgm.createTable('albums', {
+  pgm.createTable('playlists', {
     id: {
       type: 'varchar(60)',
       primaryKey: true,
@@ -12,13 +12,18 @@ exports.up = (pgm) => {
       type: 'varchar(255)',
       notNull: true,
     },
-    year: {
-      type: 'integer',
+    owner: {
+      type: 'text',
       notNull: true,
+      references: '"users"',
+      onDelete: 'cascade',
     },
   });
+
+  pgm.createIndex('playlists', 'owner');
 };
 
 exports.down = (pgm) => {
-  pgm.dropTable('albums');
+  pgm.dropIndex('playlists', 'owner');
+  pgm.dropTable('playlists');
 };
