@@ -12,11 +12,17 @@ class AuthenticationService {
 
   /**
    * Create access token
-   * @param {string} accessToken Generate refresh token
+   * @param {any} param0 Store token param
    */
-  async storeToken(accessToken) {
-    const queryText = 'INSERT INTO authentications VALUES ($1)';
-    const queryValues = [accessToken];
+  async storeToken({userId, accessToken, refershToken}) {
+    const queryText = `
+    INSERT INTO authentications(id,
+      access_token,
+      refresh_token,
+      user_id
+    ) VALUES ($1, $2, $3, $4)
+    `;
+    const queryValues = [accessToken, refershToken, userId];
     await this._db.query(queryText, queryValues);
   }
 
@@ -25,7 +31,11 @@ class AuthenticationService {
    * @param {string} accessToken Access token string
    */
   async verifyToken(accessToken) {
-    const queryText = 'SELECT token FROM authentications WHERE token = $1';
+    const queryText = `
+    SELECT access_token, refresh_token
+    FROM authentications
+    WHERE token = $1
+    `;
     const queryValues = [accessToken];
     const result = await this._db.query(queryText, queryValues);
 
