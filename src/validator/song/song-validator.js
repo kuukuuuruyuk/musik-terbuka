@@ -19,6 +19,7 @@ class SongValidator {
   validateSongPayload(payload) {
     const {songPayloadSchema} = this._schema;
     const validationResult = songPayloadSchema.validate(payload);
+
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }

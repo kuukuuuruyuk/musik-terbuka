@@ -13,24 +13,39 @@ class AuthenticationValidator {
   }
 
   /**
-   * Validate auth payload
-   * @param {any} payload Request payload
+   * Validate post auth
+   * @param {any} payload payload request
    */
-  validateAuthPayload(payload) {
-    const {authenticationPayloadSchema} = this._schema;
-    const validationResult = authenticationPayloadSchema.validate(payload);
+  validatePostAuthPayload(payload) {
+    const {postAuthPayloadSchema} = this._schema;
+    const validationResult = postAuthPayloadSchema.validate(payload);
+
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }
   }
 
   /**
-   * Validate token payload
-   * @param {any} payload Request payload
+   * Validate update payload
+   * @param {any} payload Payload request
    */
-  validateAuthTokenPayload(payload) {
-    const {authTokenPayloadSchema} = this._schema;
-    const validationResult = authTokenPayloadSchema.validate(payload);
+  validatePutAuthPayload(payload) {
+    const {putAuthPayloadSchema} = this._schema;
+    const validationResult = putAuthPayloadSchema.validate(payload);
+
+    if (validationResult.error) {
+      throw new InvariantError(validationResult.error.message);
+    }
+  }
+
+  /**
+   * Validate delete payload
+   * @param {any} payload Payload request
+   */
+  validateDeleteAuthPayload(payload) {
+    const {deleteAuthPayloadSchema} = this._schema;
+    const validationResult = deleteAuthPayloadSchema.validate(payload);
+
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }
