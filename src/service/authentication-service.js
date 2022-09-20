@@ -32,9 +32,12 @@ class AuthenticationService {
    */
   async verifyToken(accessToken) {
     const queryText = `
-    SELECT access_token, refresh_token
+    SELECT id,
+      access_token,
+      refresh_token,
+      user_id
     FROM authentications
-    WHERE token = $1
+    WHERE access_token = $1
     `;
     const queryValues = [accessToken];
     const result = await this._db.query(queryText, queryValues);
@@ -51,6 +54,7 @@ class AuthenticationService {
   async deleteToken(accessToken) {
     const queryText = 'DELETE FROM authentications WHERE token = $1';
     const queryValues = [accessToken];
+
     await this._db.query(queryText, queryValues);
   }
 }

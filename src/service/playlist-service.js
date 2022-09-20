@@ -9,9 +9,11 @@ class PlaylistService {
   /**
    * Playlist servis constructor
    * @param {any} db Database Pool
+   * @param {any} service Service injeksi
    */
-  constructor(db) {
+  constructor(db, service) {
     this._db = db;
+    this._service = service;
   }
 
   /**
@@ -46,7 +48,9 @@ class PlaylistService {
    */
   async getPlaylists(owner) {
     const queryText = `
-      SELECT playlists.id, playlists.name, users.username
+      SELECT playlists.id,
+        playlists.name,
+        users.username
       FROM playlists
       LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
       INNER JOIN users ON playlists.owner = users.id
@@ -103,10 +107,17 @@ class PlaylistService {
    * @param {string} playlistId Playlist id
    */
   async storeSongToPlaylist(songId, playlistId) {
-    await this._songsService.verifyExistingSongById(songId);
+    const {songsService} = this._service;
+
+    await songsService.verifyExistingSongById(songId);
 
     const id = `sp-${nanoid(16)}`;
-    const queryText = 'INSERT INTO playlistsongs VALUES ($1, $2, $3)';
+    const queryText = `
+    INSERT INTO playlist_songs(id
+      playlist_id,
+      song_id
+    ) VALUES ($1, $2, $3)
+    `;
     const queryValues = [id, playlistId, songId];
     const result = await this._pool.query(queryText, queryValues);
 
@@ -122,9 +133,12 @@ class PlaylistService {
    */
   async getSongsInPlaylist(playlistId) {
     const queryText = `
-      SELECT songs.id, songs.title, songs.performer FROM songs
-      LEFT JOIN playlistsongs ON songs.id = playlistsongs.song_id
-      WHERE playlistsongs.playlist_id = $1
+      SELECT songs.id,
+        songs.title,
+        songs.performer
+      FROM songs
+      LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id
+      WHERE playlist_songs.playlist_id = $1
       GROUP BY songs.id
     `;
     const queryValues = [playlistId];
@@ -157,8 +171,15 @@ class PlaylistService {
   async storePlaylistActivities(type, {playlistId, userId, songId}) {
     const id = `history-${nanoid(16)}`;
     const timeNow = new Date();
-    const queryText =
-      'INSERT INTO playlist_song_activities VALUES ($1, $2, $3, $4, $5, $6)';
+    const queryText = `
+    INSERT INTO playlist_song_activities(id,
+      playlist_id,
+      song_id,
+      user_id,
+      action,
+      time
+    ) VALUES ($1, $2, $3, $4, $5, $6)
+    `;
     const queryValues = [id, playlistId, songId, userId, type, timeNow];
     const result = await this._pool.query(queryText, queryValues);
     if (!result.rowCount) {
@@ -227,7 +248,8 @@ class PlaylistService {
       }
 
       try {
-        await this._collaborationsService.verifyCollaborator(
+        const {collaborationService} = this._service;
+        await collaborationService.verifyCollaborator(
             playlistId,
             userId,
         );
