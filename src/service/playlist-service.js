@@ -21,9 +21,15 @@ class PlaylistService {
    * @return {any}
    */
   async storePlaylist(songName, owner) {
-    const id = `playlist-${nanoid(16)}`;
-    const queryText = 'INSERT INTO playlists VALUES ($1, $2, $3) RETURNING id';
-    const queryValues = [id, songName, owner];
+    const playlistId = `playlist-${nanoid(16)}`;
+    const queryText = `
+    INSERT INTO playlists(id,
+      name,
+      owner
+    ) VALUES ($1, $2, $3)
+    RETURNING id
+    `;
+    const queryValues = [playlistId, songName, owner];
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rows[0].id) {
@@ -60,7 +66,10 @@ class PlaylistService {
    */
   async getPlaylistById(id) {
     const queryText = `
-      SELECT playlists.id, playlists.name, users.username FROM playlists
+      SELECT playlists.id,
+        playlists.name,
+        users.username
+      FROM playlists
       LEFT JOIN users ON users.id = playlists.owner
       WHERE playlists.id = $1
     `;
