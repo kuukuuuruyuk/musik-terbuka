@@ -11,11 +11,11 @@ const {
 const {
   postPlaylistSchema,
   postSongToPlaylistSchema,
+  deleteSongFromPlaylistSchema,
 } = require('./playlist/playlist-schema');
 const {songPayloadSchema} = require('./song/song-schema');
 const {truncatePayloadSchema} = require('./truncate/truncate-schema');
 const {userPayloadSchema} = require('./user/user-schema');
-
 
 const validatorSchema = {
   userPayloadSchema,
@@ -29,6 +29,7 @@ const validatorSchema = {
   postCollaborationSchema,
   deleteCollaborationSchema,
   truncatePayloadSchema,
+  deleteSongFromPlaylistSchema,
 };
 
 module.exports = validatorSchema;
