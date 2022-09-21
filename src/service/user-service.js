@@ -2,6 +2,8 @@ const {nanoid} = require('nanoid');
 const bcrypt = require('bcrypt');
 const {InvariantError} = require('../exception/invariant-error');
 const {AuthenticationError} = require('../exception/authentication-error');
+const {NotFoundError} = require('../exception/not-found-error');
+
 /**
  * User service
  */
@@ -61,6 +63,21 @@ class UserService {
     if (result.rows.length > 0) {
       const _message = 'Gagal menambahkan User baru, Username sudah ada';
       throw new InvariantError(_message);
+    }
+  }
+
+  /**
+   * Verifikasi user by id
+   * @param {string} id User id
+   */
+  async verifyExistingUserWithUserId(id) {
+    const queryText = 'SELECT id FROM users WHERE id = $1';
+    const queryValues = [id];
+
+    const result = await this._db.query(queryText, queryValues);
+
+    if (!result.rowCount) {
+      throw new NotFoundError('Not found music ID!');
     }
   }
 
