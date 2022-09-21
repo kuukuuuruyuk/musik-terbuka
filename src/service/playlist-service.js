@@ -9,27 +9,24 @@ class PlaylistService {
   /**
    * Playlist servis constructor
    * @param {any} db Database Pool
+   * @param {any} service Service injeksi
    */
-  constructor(db) {
+  constructor(db, service) {
     this._db = db;
+    this._service = service;
   }
 
   /**
-   * Create new playlist
-   * @param {any} songName song name
-   * @param {any} owner user id
-   * @return {any}
+   * Create playlist
+   * @param {string} songName song name
+   * @param {string} owner user id
+   * @return {any} return json id plyalist
    */
   async storePlaylist(songName, owner) {
-    const playlistId = `playlist-${nanoid(16)}`;
-    const queryText = `
-    INSERT INTO playlists(id,
-      name,
-      owner
-    ) VALUES ($1, $2, $3)
-    RETURNING id
-    `;
-    const queryValues = [playlistId, songName, owner];
+    const id = `playlist-${nanoid(16)}`;
+    const queryText = 'INSERT INTO playlists VALUES ($1, $2, $3) RETURNING id';
+    const queryValues = [id, songName, owner];
+
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rows[0].id) {
@@ -40,9 +37,9 @@ class PlaylistService {
   }
 
   /**
-   * Get palylist
-   * @param {any} owner User id
-   * @return {any}
+   * get playlist owner
+   * @param {string} owner user id
+   * @return {any} return json
    */
   async getPlaylists(owner) {
     const queryText = `
@@ -52,30 +49,28 @@ class PlaylistService {
       INNER JOIN users ON playlists.owner = users.id
       WHERE playlists.owner = $1 OR collaborations.user_id = $1
       GROUP BY playlists.id, users.id
+      LIMIT 2
     `;
     const queryValues = [owner];
-    const result = await this._db.query(queryText, queryValues);
 
+    const result = await this._db.query(queryText, queryValues);
     return result.rows;
   }
 
   /**
-   * Get playlist by palylis id
-   * @param {string} id Playlist id
-   * @return {any}
+   * Get playlist by id
+   * @param {string} id playlist id
+   * @return {any} json playlist
    */
-  async getPlaylistById(id) {
+  async getPlaylistMappedById(id) {
     const queryText = `
-      SELECT playlists.id,
-        playlists.name,
-        users.username
-      FROM playlists
+      SELECT playlists.id, playlists.name, users.username FROM playlists
       LEFT JOIN users ON users.id = playlists.owner
       WHERE playlists.id = $1
     `;
     const queryValues = [id];
-    const result = await this._db.query(queryText, queryValues);
 
+    const result = await this._db.query(queryText, queryValues);
     if (!result.rowCount) {
       throw new NotFoundError('Gagal menemukan playlist ID');
     }
@@ -84,12 +79,13 @@ class PlaylistService {
   }
 
   /**
-   * Hapus playlist by palylist id
-   * @param {string} id Playlit id
+   * Delete playlist id
+   * @param {string} id playlist id
    */
   async deletePlaylistById(id) {
     const queryText = 'DELETE FROM playlists WHERE id = $1';
     const queryValues = [id];
+
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
@@ -98,17 +94,19 @@ class PlaylistService {
   }
 
   /**
-   * Create palylist song
+   * Cretate song to playlist
    * @param {string} songId song id
-   * @param {string} playlistId Playlist id
+   * @param {string} playlistId playlist id
    */
   async storeSongToPlaylist(songId, playlistId) {
-    await this._songsService.verifyExistingSongById(songId);
+    const {songService} = this._service;
+    await songService.verifyExistingSongById(songId);
 
-    const id = `sp-${nanoid(16)}`;
-    const queryText = 'INSERT INTO playlistsongs VALUES ($1, $2, $3)';
+    const id = `pl-${nanoid(16)}`;
+    const queryText = 'INSERT INTO playlist_songs VALUES ($1, $2, $3)';
     const queryValues = [id, playlistId, songId];
-    const result = await this._pool.query(queryText, queryValues);
+
+    const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
       throw new InvariantError('Gagal menambahkan lagu ke playlist');
@@ -116,60 +114,67 @@ class PlaylistService {
   }
 
   /**
-   * Get song in playlist
-   * @param {string} playlistId Playlist id
-   * @return {any}
+   * Get song playlist id
+   * @param {string} playlistId playlist id
+   * @return {any} playlist id
    */
   async getSongsInPlaylist(playlistId) {
     const queryText = `
       SELECT songs.id, songs.title, songs.performer FROM songs
-      LEFT JOIN playlistsongs ON songs.id = playlistsongs.song_id
-      WHERE playlistsongs.playlist_id = $1
+      LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id
+      WHERE playlist_songs.playlist_id = $1
       GROUP BY songs.id
     `;
     const queryValues = [playlistId];
-    const result = await this._pool.query(queryText, queryValues);
+    const result = await this._db.query(queryText, queryValues);
 
-    return result.rows.map(mapGetSongs);
+    return result.rows.map((item) => ({
+      id: item.id,
+      title: item.title,
+      performer: item.performer,
+    }));
   }
 
   /**
-   * Delete song from playlist by song id
-   * @param {string} songId Song string
+   * Hapus song from playlist id by song id
+   * @param {string} songId Song id
    */
-  async deleteSongBySongId(songId) {
-    const queryText = 'DELETE FROM playlistsongs WHERE song_id = $1';
+  async deleteSongFromPlaylistBySongId(songId) {
+    const queryText = 'DELETE FROM playlist_songs WHERE song_id = $1';
     const queryValues = [songId];
-    const result = await this._pool.query(queryText, queryValues);
+
+    const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
-      const _message =
+      const message =
         'Gagal menghapus lagu dari playlist. Id song tidak ditemukan';
-      throw new InvariantError(_message);
+      throw new InvariantError(message);
     }
   }
 
   /**
-   * Create playlist activities
-   * @param {any} type Belum tau ini parameter untuk apa
-   * @param {any} param1 param for insert
+   * Crete plaulist activities
+   * @param {string} type type playlist
+   * @param {any} param1 user param
    */
   async storePlaylistActivities(type, {playlistId, userId, songId}) {
     const id = `history-${nanoid(16)}`;
-    const timeNow = new Date();
+    const timeNow = new Date().toISOString();
+
     const queryText =
       'INSERT INTO playlist_song_activities VALUES ($1, $2, $3, $4, $5, $6)';
     const queryValues = [id, playlistId, songId, userId, type, timeNow];
-    const result = await this._pool.query(queryText, queryValues);
+
+    const result = await this._db.query(queryText, queryValues);
     if (!result.rowCount) {
       throw new InvariantError('gagal menambahkan atifitas playlist');
     }
   }
 
   /**
-   * Get history palylist
-   * @param {any} playlistId Palylist id
-   * @return {any}
+   * get history
+   * @param {string} playlistId Playlist id
+   * @return {any} json playlist
    */
   async getHistoryByPlaylistId(playlistId) {
     const queryText = `
@@ -181,9 +186,11 @@ class PlaylistService {
       INNER JOIN users ON users.id = playlist_song_activities.user_id
       INNER JOIN songs ON songs.id = playlist_song_activities.song_id
       WHERE playlist_song_activities.playlist_id = $1
+      LIMIT 3
     `;
     const queryValues = [playlistId];
-    const result = await this._pool.query(queryText, queryValues);
+
+    const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
       throw new NotFoundError('playlist ID tidak ditemukan');
@@ -193,13 +200,14 @@ class PlaylistService {
   }
 
   /**
-   * Check palylist owner
+   * verifikasi playlist id
    * @param {string} playlistId palylist id
    * @param {string} owner user id
    */
   async verifyPlaylistOwner(playlistId, owner) {
     const queryText = 'SELECT id, owner FROM playlists WHERE id = $1';
     const queryValues = [playlistId];
+
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
@@ -208,14 +216,15 @@ class PlaylistService {
 
     const playlist = result.rows[0];
     if (playlist.owner !== owner) {
-      const _message = 'Anda tidak mempunyai akses. Atas resource ini...';
-      throw new AuthorizationError(_message);
+      throw new AuthorizationError(
+          'Anda tidak mempunyai akses. Atas resource ini...',
+      );
     }
   }
 
   /**
-   * Verifikasi palylist akses
-   * @param {string} playlistId Playlist id
+   * verifikasi playlist access
+   * @param {string} playlistId playlist id
    * @param {string} userId user id
    */
   async verifyPlaylistAccess(playlistId, userId) {
@@ -227,10 +236,8 @@ class PlaylistService {
       }
 
       try {
-        await this._collaborationsService.verifyCollaborator(
-            playlistId,
-            userId,
-        );
+        const {collaborationService} = this._service;
+        await collaborationService.verifyCollaborator(playlistId, userId);
       } catch {
         throw error;
       }

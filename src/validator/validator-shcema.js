@@ -1,17 +1,35 @@
 const {albumPayloadSchema} = require('./album/album-schema');
 const {
-  authenticationPayloadSchema,
-  authTokenPayloadSchema,
+  putAuthPayloadSchema,
+  postAuthPayloadSchema,
+  deleteAuthPayloadSchema,
 } = require('./authentication/authentication-schema');
-const {playlistPayloadSchema} = require('./playlist/playlist-schema');
+const {
+  postCollaborationSchema,
+  deleteCollaborationSchema,
+} = require('./collaboration/collaboration-schema');
+const {
+  postPlaylistSchema,
+  postSongToPlaylistSchema,
+  deleteSongFromPlaylistSchema,
+} = require('./playlist/playlist-schema');
 const {songPayloadSchema} = require('./song/song-schema');
+const {truncatePayloadSchema} = require('./truncate/truncate-schema');
 const {userPayloadSchema} = require('./user/user-schema');
 
-module.exports = {
+const validatorSchema = {
   userPayloadSchema,
   songPayloadSchema,
   albumPayloadSchema,
-  authenticationPayloadSchema,
-  authTokenPayloadSchema,
-  playlistPayloadSchema,
+  postPlaylistSchema,
+  postSongToPlaylistSchema,
+  putAuthPayloadSchema,
+  postAuthPayloadSchema,
+  deleteAuthPayloadSchema,
+  postCollaborationSchema,
+  deleteCollaborationSchema,
+  truncatePayloadSchema,
+  deleteSongFromPlaylistSchema,
 };
+
+module.exports = validatorSchema;

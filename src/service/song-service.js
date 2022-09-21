@@ -213,6 +213,21 @@ class SongService {
       throw new NotFoundError('Failed to delete a music, ID not found!');
     }
   }
+
+  /**
+   * Check song exist
+   * @param {string} id Song id
+   */
+  async verifyExistingSongById(id) {
+    const queryText = 'SELECT id FROM songs WHERE id = $1';
+    const queryValues = [id];
+
+    const result = await this._db.query(queryText, queryValues);
+
+    if (!result.rowCount) {
+      throw new NotFoundError('Not found music ID!');
+    }
+  }
 }
 
 module.exports = {SongService};

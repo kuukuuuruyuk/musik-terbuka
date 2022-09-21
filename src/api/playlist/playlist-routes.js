@@ -12,36 +12,55 @@ class PlaylistRoute {
 
   /**
    * Playlist routes
+   * @param {any} options option param handler
    * @return {Array}
    */
-  routes() {
+  routes(options) {
     const h = this._h;
+    const {auth} = options;
 
     return [
       {
         method: 'POST',
         path: '/playlists',
         handler: h.postPlaylistHandler,
+        options: {auth},
       },
       {
         method: 'GET',
         path: '/playlists',
         handler: h.getPlaylistsHandler,
+        options: {auth},
       },
       {
         method: 'DELETE',
-        path: '/playlists',
+        path: '/playlists/{playlistId}',
         handler: h.deletePlaylistHandler,
+        options: {auth},
       },
       {
         method: 'POST',
-        path: '/playlists/{id}/song',
-        handler: h.postPlaylistSongHandler,
+        path: '/playlists/{playlistId}/songs',
+        handler: h.postSongToPlaylistHandler,
+        options: {auth},
+      },
+      {
+        method: 'GET',
+        path: '/playlists/{playlistId}/songs',
+        handler: h.getSongsFromPlaylistHandler,
+        options: {auth},
       },
       {
         method: 'DELETE',
-        path: '/playlists/{id}/song',
-        handler: h.deletePlaylistSonghandler,
+        path: '/playlists/{playlistId}/songs',
+        handler: h.deleteSongFromPlaylistHandler,
+        options: {auth},
+      },
+      {
+        method: 'GET',
+        path: '/playlists/{playlistId}/activities',
+        handler: h.getPlalistActivitiesHandler,
+        options: {auth},
       },
     ];
   }

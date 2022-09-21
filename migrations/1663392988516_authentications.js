@@ -12,7 +12,7 @@ exports.up = (pgm) => {
     },
     refresh_token: {
       type: 'text',
-      notNull: true,
+      notNull: false,
     },
     user_id: {
       type: 'text',

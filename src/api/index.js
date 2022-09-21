@@ -1,15 +1,21 @@
+// Handler
 const {AlbumHandler} = require('./album/album-handler');
-const {AlbumRoute} = require('./album/album-routes');
 const {
   AuthenticationHandler,
 } = require('./authentication/authentication-handler');
-const {AuthenticationRoute} = require('./authentication/authentication-routes');
+const {CollaborationHandler} = require('./collaboration/collaborator-handler');
 const {PlaylistHandler} = require('./playlist/playlist-handler');
-const {PlaylistRoute} = require('./playlist/playlist-routes');
 const {SongHandler} = require('./song/song-handler');
-const {SongRoute} = require('./song/song-routes');
 const {UserHandler} = require('./user/user-handler');
+// Routes
+const {AuthenticationRoute} = require('./authentication/authentication-routes');
+const {CollaborationRoute} = require('./collaboration/collaborator-routes');
+const {PlaylistRoute} = require('./playlist/playlist-routes');
+const {AlbumRoute} = require('./album/album-routes');
+const {SongRoute} = require('./song/song-routes');
 const {UserRoute} = require('./user/user-routes');
+
+const APP_JWT_KEY = 'musicterbuka_jwt';
 
 /**
  * Api handler
@@ -48,9 +54,10 @@ function api() {
       name: 'playlists',
       version: '1.0.0',
       register: async function(server, {service, validator}) {
+        const options = {auth: APP_JWT_KEY};
         const serverHandler = new PlaylistHandler(service, validator);
         const serverRoute = new PlaylistRoute(serverHandler);
-        server.route(serverRoute.routes());
+        server.route(serverRoute.routes(options));
       },
     },
     authenticationApi: {
@@ -60,6 +67,16 @@ function api() {
         const serverHandler = new AuthenticationHandler(service, validator);
         const serverRoute = new AuthenticationRoute(serverHandler);
         server.route(serverRoute.routes());
+      },
+    },
+    collaborationApi: {
+      name: 'collaborations',
+      version: '1.0.0',
+      register: async function(server, {service, validator}) {
+        const options = {auth: APP_JWT_KEY};
+        const serverHandler = new CollaborationHandler(service, validator);
+        const serverRoute = new CollaborationRoute(serverHandler);
+        server.route(serverRoute.routes(options));
       },
     },
   };

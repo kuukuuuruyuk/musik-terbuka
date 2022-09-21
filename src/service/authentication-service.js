@@ -1,3 +1,6 @@
+const {nanoid} = require('nanoid');
+const {InvariantError} = require('../exception/invariant-error');
+
 /**
  * Authentication service
  */
@@ -15,6 +18,7 @@ class AuthenticationService {
    * @param {any} param0 Store token param
    */
   async storeToken({userId, accessToken, refershToken}) {
+    const id = `auth-${nanoid(16)}`;
     const queryText = `
     INSERT INTO authentications(id,
       access_token,
@@ -22,7 +26,7 @@ class AuthenticationService {
       user_id
     ) VALUES ($1, $2, $3, $4)
     `;
-    const queryValues = [accessToken, refershToken, userId];
+    const queryValues = [id, accessToken, refershToken, userId];
     await this._db.query(queryText, queryValues);
   }
 
@@ -32,9 +36,12 @@ class AuthenticationService {
    */
   async verifyToken(accessToken) {
     const queryText = `
-    SELECT access_token, refresh_token
+    SELECT id,
+      access_token,
+      refresh_token,
+      user_id
     FROM authentications
-    WHERE token = $1
+    WHERE access_token = $1
     `;
     const queryValues = [accessToken];
     const result = await this._db.query(queryText, queryValues);
@@ -49,8 +56,9 @@ class AuthenticationService {
    * @param {string} accessToken Access token
    */
   async deleteToken(accessToken) {
-    const queryText = 'DELETE FROM authentications WHERE token = $1';
+    const queryText = 'DELETE FROM authentications WHERE access_token = $1';
     const queryValues = [accessToken];
+
     await this._db.query(queryText, queryValues);
   }
 }

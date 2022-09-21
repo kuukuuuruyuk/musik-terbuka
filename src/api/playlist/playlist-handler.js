@@ -16,31 +16,36 @@ class PlaylistHandler {
     this.postPlaylistHandler = this.postPlaylistHandler.bind(this);
     this.getPlaylistsHandler = this.getPlaylistsHandler.bind(this);
     this.deletePlaylistHandler = this.deletePlaylistHandler.bind(this);
-    this.postPlaylistSongHandler = this.postPlaylistSongHandler.bind(this);
-    this.deletePlaylistSonghandler = this.deletePlaylistSonghandler.bind(this);
+    this.postSongToPlaylistHandler = this.postSongToPlaylistHandler.bind(this);
     this.getSongsFromPlaylistHandler =
       this.getSongsFromPlaylistHandler.bind(this);
+    this.deleteSongFromPlaylistHandler =
+      this.deleteSongFromPlaylistHandler.bind(this);
     this.getPlalistActivitiesHandler =
       this.getPlalistActivitiesHandler.bind(this);
   }
 
   /**
    * Menambahakan playlist
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
+   * @param {Request} request Request body
+   * @param {any} h handler
    * @return {any}
    */
   async postPlaylistHandler(request, h) {
     try {
-      this._validator.validatePostPlaylistSchema(payload);
+      const {payload, auth} = request;
+      const {playlistValidator} = this._validator;
+      playlistValidator.validatePostPlaylist(payload);
       const {name} = payload;
+
+      const {playlistService} = this._service;
       const {id: credentialId} = auth.credentials;
-      const playlistId = await this._service.addPlaylist(name, credentialId);
+      const id = await playlistService.storePlaylist(name, credentialId);
 
       const _response = h.response({
         status: 'success',
         message: 'Playlist berhasil ditambahkan',
-        data: {playlistId},
+        data: {playlistId: id},
       });
 
       _response.code(201);
@@ -51,78 +56,72 @@ class PlaylistHandler {
   }
 
   /**
-   * Melihat daftar playlist yang dimiliki
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
+   * Get playlist handler
+   * @param {Request} request body
+   * @param {any} h Hapi handler
    * @return {any}
    */
   async getPlaylistsHandler(request, h) {
     try {
-      const {authService} = this._service;
-      const {id: userId} = authService.credentials;
+      const {auth} = request;
+      const {id: userId} = auth.credentials;
       const {playlistService} = this._service;
-      const result = await playlistService.getPlaylists(userId);
+      const playlists = await playlistService.getPlaylists(userId);
 
-      const _response = h.response({
+      return h.response({
         status: 'success',
-        data: {playlists: result},
+        data: {playlists},
       });
-
-      return _response;
     } catch (error) {
       return failedWebResponse(error, h);
     }
   }
 
   /**
-   * Menghapus playlist
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
+   * Hpaus playlist
+   * @param {Request} request Request body
+   * @param {any} h Hapi handler
    * @return {any}
    */
   async deletePlaylistHandler(request, h) {
     try {
-      const {params} = request;
+      const {auth, params} = request;
       const {playlistId} = params;
-      const {authService} = this._service;
-      const {id: credentialId} = authService.credentials;
+      const {id: credentialId} = auth.credentials;
       const {playlistService} = this._service;
-
       await playlistService.verifyPlaylistOwner(playlistId, credentialId);
       await playlistService.deletePlaylistById(playlistId);
 
-      const _response = h.response({
+      return h.response({
         status: 'success',
         message: 'Playlist berhasil dihapus',
       });
-
-      return _response;
     } catch (error) {
       return failedWebResponse(error, h);
     }
   }
 
   /**
-   * Menambahkan lagu ke playlist
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
+   * post dong by id
+   * @param {*} request Request boddy
+   * @param {*} h Hapi handler
    * @return {any}
    */
-  async postPlaylistSongHandler(request, h) {
+  async postSongToPlaylistHandler(request, h) {
     try {
-      const {payload} = request;
+      const {payload, auth, params} = request;
       const {playlistValidator} = this._validator;
 
-      playlistValidator.validatePostSongToPlaylistSchema(payload);
+      playlistValidator.validatePostSongToPlaylist(payload);
 
       const {songId} = payload;
       const {playlistId} = params;
       const {id: userId} = auth.credentials;
-      const {palaylistService} = this._service;
+      const {playlistService} = this._service;
 
-      await palaylistService.verifyPlaylistAccess(playlistId, userId);
-      await palaylistService.addSongToPlaylist(songId, playlistId);
-      await palaylistService.addPlaylistActivities('add', {
+      await playlistService.verifyPlaylistAccess(playlistId, userId);
+      await playlistService.storeSongToPlaylist(songId, playlistId);
+      await playlistService.storePlaylistActivities('add', {
         playlistId,
         userId,
         songId,
@@ -141,46 +140,9 @@ class PlaylistHandler {
   }
 
   /**
-   * Menghapus lagu dari playlist
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
-   * @return {any}
-   */
-  async deletePlaylistSonghandler(request, h) {
-    try {
-      const {payload} = request;
-      const {playlistValidator} = this._validator;
-
-      playlistValidator.validateDeleteSongFromPlaylistSchema(payload);
-
-      const {playlistId} = params;
-      const {songId} = payload;
-      const {authService, playlistService} = this._service;
-      const {id: userId} = authService.credentials;
-
-      await playlistService.verifyPlaylistAccess(playlistId, userId);
-      await playlistService.deleteSongFromPlaylistBySongId(songId);
-      await playlistService.addPlaylistActivities('delete', {
-        playlistId,
-        userId,
-        songId,
-      });
-
-      const _response = h.response({
-        status: 'success',
-        message: 'Lagu berhasil dihapus dari playlist',
-      });
-
-      return _response;
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
-  }
-
-  /**
-   * Get somng from palisi
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
+   * get song from playlist
+   * @param {any} request Request body
+   * @param {any} h Hapi handler
    * @return {any}
    */
   async getSongsFromPlaylistHandler(request, h) {
@@ -191,12 +153,12 @@ class PlaylistHandler {
       const {playlistService} = this._service;
 
       await playlistService.verifyPlaylistAccess(playlistId, credentialId);
-
       const playlistData =
         await playlistService.getPlaylistMappedById(playlistId);
-      const songsData = await playlistService.getSongsInPlaylist(playlistId);
+      const songsData =
+        await playlistService.getSongsInPlaylist(playlistId);
 
-      const _response = h.response({
+      return h.response({
         status: 'success',
         data: {
           playlist: {
@@ -205,17 +167,49 @@ class PlaylistHandler {
           },
         },
       });
-
-      return _response;
     } catch (error) {
       return failedWebResponse(error, h);
     }
   }
 
   /**
-   * Get playlist aktipiti
-   * @param {Request} request Request from body
-   * @param {any} h Hapi server handler
+   * Delte song from playlist
+   * @param {Request} request Request body
+   * @param {any} h Hapi handler
+   * @return {any}
+   */
+  async deleteSongFromPlaylistHandler(request, h) {
+    try {
+      const {payload, params, auth} = request;
+      const {playlistValidator} = this._validator;
+      playlistValidator.validateDeleteSongFromPlaylist(payload);
+
+      const {playlistId} = params;
+      const {songId} = payload;
+      const {id: userId} = auth.credentials;
+      const {playlistService} = this._service;
+
+      await playlistService.verifyPlaylistAccess(playlistId, userId);
+      await playlistService.deleteSongFromPlaylistBySongId(songId);
+      await playlistService.storePlaylistActivities('delete', {
+        playlistId,
+        userId,
+        songId,
+      });
+
+      return h.response({
+        status: 'success',
+        message: 'Lagu berhasil dihapus dari playlist',
+      });
+    } catch (error) {
+      return failedWebResponse(error, h);
+    }
+  }
+
+  /**
+   * Get playlist activea
+   * @param {Request} request Request body
+   * @param {any} h Hapi server
    * @return {any}
    */
   async getPlalistActivitiesHandler(request, h) {
@@ -226,17 +220,15 @@ class PlaylistHandler {
       const {playlistService} = this._service;
 
       await playlistService.verifyPlaylistAccess(playlistId, userId);
-
       const activities =
         await playlistService.getHistoryByPlaylistId(playlistId);
 
-      const _response = h.response({
+      return h.response({
         status: 'success',
         data: {playlistId, activities},
       });
-
-      return _response;
     } catch (error) {
+      console.log('gh', error);
       return failedWebResponse(error, h);
     }
   }

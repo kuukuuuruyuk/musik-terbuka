@@ -18,6 +18,7 @@ class AlbumValidator {
   validateAlbumPayload(payload) {
     const {albumPayloadSchema} = this._schema;
     const validationResult = albumPayloadSchema.validate(payload);
+
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }

@@ -2,12 +2,15 @@ const {Pool} = require('pg');
 const validationSchema = require('./validator/validator-shcema');
 const api = require('./api');
 const {ClientError} = require('./exception/client-error');
+const {failedWebResponse} = require('./utils/web-response');
 // Service
 const {AlbumService} = require('./service/album-service');
 const {SongService} = require('./service/song-service');
 const {UserService} = require('./service/user-service');
 const {PlaylistService} = require('./service/playlist-service');
 const {AuthenticationService} = require('./service/authentication-service');
+const {DBService} = require('./service/db-service');
+const {CollaborationService} = require('./service/collaboration-service');
 // validator
 const {UserValidator} = require('./validator/user/user-validator');
 const {SongValidator} = require('./validator/song/song-validator');
@@ -17,6 +20,9 @@ const {
 } = require('./validator/authentication/authentication-validator');
 const {PlaylistValidator} = require('./validator/playlist/playlist-validator');
 const {TokenManager} = require('./tokenize/token-manager');
+const {TruncateValidator} = require('./validator/truncate/truncate-validator');
+const {CollaborationValidator} =
+  require('./validator/collaboration/collaboration-validator');
 
 /**
  * App server
@@ -30,6 +36,7 @@ async function appServer(server) {
     userApi,
     playlistApi,
     authenticationApi,
+    collaborationApi,
   } = api();
 
   // Database pool
@@ -39,8 +46,13 @@ async function appServer(server) {
   const albumService = new AlbumService(pool);
   const songService = new SongService(pool);
   const userService = new UserService(pool);
-  const playlistService = new PlaylistService(pool);
+  const collaborationService = new CollaborationService(pool);
+  const playlistService = new PlaylistService(pool, {
+    songService,
+    collaborationService,
+  });
   const authService = new AuthenticationService(pool);
+  const dbService = new DBService(pool);
 
   // Validator
   const userValidator = new UserValidator(validationSchema);
@@ -48,6 +60,9 @@ async function appServer(server) {
   const albumValidator = new AlbumValidator(validationSchema);
   const authValidator = new AuthenticationValidator(validationSchema);
   const playlistValidator = new PlaylistValidator(validationSchema);
+  const truncateValidator = new TruncateValidator(validationSchema);
+  const collaborationValidator =
+    new CollaborationValidator(validationSchema);
 
   // Token manager
   const tokenManager = new TokenManager();
@@ -86,6 +101,44 @@ async function appServer(server) {
     return h.continue || response;
   }
 
+  // Routes
+  server.route([
+    {
+      method: 'GET',
+      path: '/',
+      handler: (_request, h) => {
+        const _sayHello = 'Hello World!';
+        const _response = h.response({
+          message: _sayHello,
+        });
+
+        return _response;
+      },
+    },
+    {
+      method: 'DELETE',
+      path: '/truncate',
+      handler: async (request, h) => {
+        try {
+          const {payload} = request;
+
+          truncateValidator.validatePayload(payload);
+
+          await dbService.truncateDB();
+
+          const _response = h.response({
+            status: 'success',
+            message: 'berhasil mentruncate semua data table',
+          });
+
+          return _response;
+        } catch (error) {
+          return failedWebResponse(error, h);
+        }
+      },
+    },
+  ]);
+
   // Regis local plugin
   await server.register([
     {
@@ -98,7 +151,7 @@ async function appServer(server) {
     {
       plugin: albumApi,
       options: {
-        service: {albumService},
+        service: {albumService, songService},
         validator: {albumValidator},
       },
     },
@@ -121,6 +174,17 @@ async function appServer(server) {
       options: {
         service: {authService, userService, tokenManager},
         validator: {authValidator},
+      },
+    },
+    {
+      plugin: collaborationApi,
+      options: {
+        service: {
+          userService,
+          playlistService,
+          collaborationService,
+        },
+        validator: {collaborationValidator},
       },
     },
   ]);
