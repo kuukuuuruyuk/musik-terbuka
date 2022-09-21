@@ -29,7 +29,7 @@ class AuthenticationHandler {
       const {payload} = request;
       const {authValidator} = this._validator;
 
-      authValidator.validatePostAuthenticationPayload(payload);
+      authValidator.validatePostAuthPayload(payload);
 
       const {username, password} = payload;
       const {
@@ -42,7 +42,11 @@ class AuthenticationHandler {
       const jwtAccessToken = await _tokenManager.generateAccessToken(userId);
       const jwtRefreshToken = await _tokenManager.generateRefreshToken(userId);
 
-      await authService.addRefreshToken(jwtRefreshToken);
+      await authService.storeToken({
+        accessToken: jwtRefreshToken,
+        refreshToken: jwtRefreshToken,
+        userId: userId.id,
+      });
 
       const _response = h.response({
         status: 'success',
@@ -71,7 +75,7 @@ class AuthenticationHandler {
       const {payload} = request;
       const {authValidator} = this._validator;
 
-      authValidator.validatePutAuthenticationPayload(payload);
+      authValidator.validatePutAuthPayload(payload);
 
       const {refreshToken} = payload;
       const {
@@ -79,7 +83,7 @@ class AuthenticationHandler {
         tokenManager: _tokenManager,
       } = this._service;
 
-      await authService.verifyRefreshToken(refreshToken);
+      await authService.verifyToken(refreshToken);
 
       const {id} = await _tokenManager.verifyRefreshToken(refreshToken);
       const jwtAccessToken = await _tokenManager.generateAccessToken({id});
@@ -106,7 +110,8 @@ class AuthenticationHandler {
     try {
       const {payload} = request;
       const {authValidator} = this._validator;
-      authValidator.validateDeleteAuthenticationPayload(payload);
+
+      authValidator.validateDeleteAuthPayload(payload);
 
       const {refreshToken} = payload;
       const {
@@ -115,7 +120,7 @@ class AuthenticationHandler {
       } = this._service;
 
       await _tokenManager.verifyRefreshToken(refreshToken);
-      await authService.deleteRefreshToken(refreshToken);
+      await authService.deleteToken(refreshToken);
 
       const _response = h.response({
         status: 'success',

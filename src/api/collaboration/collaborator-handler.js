@@ -1,3 +1,5 @@
+const {failedWebResponse} = require('../../utils/web-response');
+
 /**
  * Collaboration handler
  */
@@ -23,27 +25,36 @@ class CollaborationHandler {
    * @return {any}
    */
   async postCollaborationHandler(request, h) {
-    const {payload, auth} = request;
-    this._validator.validatePostCollaborationSchema(payload);
+    try {
+      const {payload, auth} = request;
+      const {collaborationValidator} = this._validator;
 
-    const {id: credentialId} = auth.credentials;
-    const {playlistId, userId} = payload;
+      collaborationValidator.validatePostCollaboration(payload);
 
-    await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-    await this._usersServices.verifyExistingUserWithUserId(userId);
-    const id =
-      await this._collaborationsService.addCollaboration(playlistId, userId);
+      const {id: credentialId} = auth.credentials;
+      const {playlistId, userId} = payload;
+      const {
+        playlistService,
+        userService,
+        collaborationService,
+      } = this._service;
+      await playlistService.verifyPlaylistOwner(playlistId, credentialId);
+      await userService.verifyExistingUserWithUserId(userId);
+      const id =
+        await collaborationService.storeCollaboration(playlistId, userId);
 
-    const _response = h.response({
-      status: 'success',
-      message: 'Kolaborasi berhasil ditambahkan',
-      data: {
-        collaborationId: id,
-      },
-    });
+      const _response = h.response({
+        status: 'success',
+        message: 'Kolaborasi berhasil ditambahkan',
+        data: {collaborationId: id},
+      });
 
-    _response.code(201);
-    return _response;
+      _response.code(201);
+      return _response;
+    } catch (error) {
+      console.log(error);
+      return failedWebResponse(error, h);
+    }
   }
 
   /**
@@ -53,21 +64,27 @@ class CollaborationHandler {
    * @return {any}
    */
   async deleteCollaborationHandler(request, h) {
-    const {payload, auth} = request;
-    this._validator.validateDeleteCollaborationSchema(payload);
+    try {
+      const {payload, auth} = request;
+      const {collaborationValidator} = this._validator;
 
-    const {id: credentialId} = auth.credentials;
-    const {playlistId, userId} = payload;
+      collaborationValidator.validateDeleteCollaboration(payload);
 
-    await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-    await this._collaborationsService.deleteCollaboration(playlistId, userId);
+      const {id: credentialId} = auth.credentials;
+      const {playlistId, userId} = payload;
+      const {playlistService, collaborationService} = this._service;
+      await playlistService.verifyPlaylistOwner(playlistId, credentialId);
+      await collaborationService.deleteCollaboration(playlistId, userId);
 
-    const _response = h.response({
-      status: 'success',
-      message: 'Kolaborasi berhasil dihapus',
-    });
+      const _response = h.response({
+        status: 'success',
+        message: 'Kolaborasi berhasil dihapus',
+      });
 
-    return _response;
+      return _response;
+    } catch (error) {
+      return failedWebResponse(error, h);
+    }
   }
 }
 

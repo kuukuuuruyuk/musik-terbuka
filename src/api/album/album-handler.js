@@ -29,9 +29,9 @@ class AlbumHandler {
   async postAlbumHandler(request, h) {
     try {
       const {payload} = request;
-      const {albumValidator: _albumValidator} = this._validator;
+      const {albumValidator} = this._validator;
 
-      await _albumValidator.validateAlbumPayload(payload);
+      albumValidator.validateAlbumPayload(payload);
 
       const {name, year} = payload;
       const {albumService: _albumService} = this._service;
@@ -60,11 +60,11 @@ class AlbumHandler {
     try {
       const {id} = request.params;
       const {
-        albumService: _albumService,
-        songService: _songService,
+        albumService,
+        songService,
       } = this._service;
-      const album = await _albumService.getAlbumById(id);
-      const songs = await _songService.getSongsByAlbumId(id);
+      const album = await albumService.getAlbumById(id);
+      const songs = await songService.getSongsByAlbumId(id);
 
       const _response = h.response({
         status: 'success',
