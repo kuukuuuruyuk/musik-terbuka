@@ -56,6 +56,7 @@ class PlaylistService {
       INNER JOIN users ON playlists.owner = users.id
       WHERE playlists.owner = $1 OR collaborations.user_id = $1
       GROUP BY playlists.id, users.id
+      LIMIT 2
     `;
     const queryValues = [owner];
     const result = await this._db.query(queryText, queryValues);
@@ -124,6 +125,13 @@ class PlaylistService {
     if (!result.rowCount) {
       throw new InvariantError('Gagal menambahkan lagu ke playlist');
     }
+  }
+
+  /**
+   * Get playlist  song by user
+   */
+  async getPlaylistSongsById() {
+
   }
 
   /**

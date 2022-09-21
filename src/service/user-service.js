@@ -1,5 +1,7 @@
-const {InvariantError} = require('../exception/invariant-error');
+const {nanoid} = require('nanoid');
 const bcrypt = require('bcrypt');
+const {InvariantError} = require('../exception/invariant-error');
+const {AuthenticationError} = require('../exception/authentication-error');
 /**
  * User service
  */
