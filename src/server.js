@@ -47,7 +47,7 @@ async function bootstrap() {
   await _server.start();
 
   // Show info server on app run
-  console.table({
+  console.log({
     i: `Server berjalan pada ${_server.info.uri} ${process.env.NODE_ENV}`,
   });
 }
