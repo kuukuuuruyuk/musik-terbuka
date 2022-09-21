@@ -17,7 +17,7 @@ class TruncateValidator {
    * @param {any} payload Request payload
    */
   validatePayload(payload) {
-    const {truncatePayloadSchema} = this._service;
+    const {truncatePayloadSchema} = this._schema;
     const validationResult = truncatePayloadSchema.validate(payload);
 
     if (validationResult.error) {
