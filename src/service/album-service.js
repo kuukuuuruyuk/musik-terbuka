@@ -3,20 +3,22 @@ const {InvariantError} = require('../exception/invariant-error');
 const {NotFoundError} = require('../exception/not-found-error');
 
 /**
- * Album service
+ * Album
  */
 class AlbumService {
   /**
-   * Method konstruktor album servis
-   * @param {Pool} db db connection pool
+   * Album service
+   *
+   * @param {Pool} db Db connection
    */
   constructor(db) {
     this._db = db;
   }
 
   /**
-   * Store album
-   * @params {name, year}
+   * Create album
+   *
+   * @param {any} param0 Album model
    */
   async storeAlbum({name, year}) {
     const id = nanoid();
@@ -36,9 +38,10 @@ class AlbumService {
   }
 
   /**
-   * Get album by id
-   * @param {string} id album id
-   * @return {JSON}
+   * Show album by id
+   *
+   * @param {string} id Album id
+   * @return {any} Album
    */
   async getAlbumById(id) {
     const queryText = `
@@ -60,8 +63,9 @@ class AlbumService {
 
   /**
    * Edit album by id
-   * @param {string} id album id
-   * @param {any} param1 name and year
+   *
+   * @param {string} id Album id
+   * @param {any} param1 Album model
    */
   async updateAlbumById(id, {name, year}) {
     const queryText = `
@@ -78,7 +82,8 @@ class AlbumService {
 
   /**
    * Delete album by id
-   * @param {any} id album id
+   *
+   * @param {any} id Album id
    */
   async deleteAlbumById(id) {
     const queryText = 'DELETE FROM albums WHERE id = $1';

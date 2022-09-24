@@ -5,21 +5,22 @@ const {AuthenticationError} = require('../exception/authentication-error');
 const {NotFoundError} = require('../exception/not-found-error');
 
 /**
- * User service
+ * User
  */
 class UserService {
   /**
-   * User service constructor
-   * @param {any} db db connection pool
+   * User service
+   * @param {any} db Database connection
    */
   constructor(db) {
     this._db = db;
   }
 
   /**
-   * Simpan user
-   * @param {any} param0 user model
-   * @return {string} id user
+   * Create user
+   *
+   * @param {any} param0 User params
+   * @return {string} User id
    */
   async storeUser({
     username,
@@ -48,7 +49,8 @@ class UserService {
 
   /**
    * Check username ready
-   * @param {string} username param username from payload
+   *
+   * @param {string} username Username
    */
   async _isUserExist(username) {
     const queryText = `
@@ -68,6 +70,7 @@ class UserService {
 
   /**
    * Verifikasi user by id
+   *
    * @param {string} id User id
    */
   async verifyExistingUserWithUserId(id) {
@@ -83,9 +86,10 @@ class UserService {
 
   /**
    * Verifikasi user credential
-   * @param {any} username username
-   * @param {any} password password
-   * @return {any}
+   *
+   * @param {string} username username
+   * @param {string} password password
+   * @return {string} User id
    */
   async userCrendential(username, password) {
     const queryText = 'SELECT id, password FROM users WHERE username = $1';

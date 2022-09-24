@@ -2,12 +2,13 @@ const {nanoid} = require('nanoid');
 const {InvariantError} = require('../exception/invariant-error');
 
 /**
- * Authentication service
+ * Authentication
  */
 class AuthenticationService {
   /**
    * Authentication service
-   * @param {any} db Database poll connection
+   *
+   * @param {Pool} db Database connection
    */
   constructor(db) {
     this._db = db;
@@ -15,6 +16,7 @@ class AuthenticationService {
 
   /**
    * Create access token
+   *
    * @param {any} param0 Store token param
    */
   async storeToken({userId, accessToken, refershToken}) {
@@ -32,6 +34,7 @@ class AuthenticationService {
 
   /**
    * Chck access token by token
+   *
    * @param {string} accessToken Access token string
    */
   async verifyToken(accessToken) {
@@ -52,7 +55,8 @@ class AuthenticationService {
   }
 
   /**
-   * Delte token by access token
+   * Delete token by access token
+   *
    * @param {string} accessToken Access token
    */
   async deleteToken(accessToken) {

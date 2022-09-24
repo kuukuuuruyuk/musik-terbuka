@@ -15,9 +15,10 @@ class SongService {
   }
 
   /**
-   * Add song
-   * @param {*} param0 Song params
-   * @return {any}
+   * Create song
+   *
+   * @param {any} param0 Song params
+   * @return {any} Song model
    */
   async storeSong({
     title,
@@ -56,9 +57,10 @@ class SongService {
   }
 
   /**
-   * Get songs
-   * @param {*} param0 get sogn params
-   * @return {any}
+   * Store song
+   *
+   * @param {any} param0 Song params
+   * @return {any} Song data
    */
   async getSongs({title, performer}) {
     const querySql = new Set([
@@ -114,9 +116,10 @@ class SongService {
   }
 
   /**
-   * Get song data by id
-   * @param {string} id song id
-   * @return {any}
+   * Show song data by id
+   *
+   * @param {string} id Song id
+   * @return {any} Song model
    */
   async getSongById(id) {
     const queryText = `
@@ -149,9 +152,10 @@ class SongService {
   }
 
   /**
-   * Get song by album id
-   * @param {any} albumId Album id
-   * @return {any}
+   * Show song by album id
+   *
+   * @param {any} albumId String id
+   * @return {any} Song model
    */
   async getSongsByAlbumId(albumId) {
     const queryText = `
@@ -175,8 +179,9 @@ class SongService {
 
   /**
    * Edit song by id
-   * @param {string} id song id
-   * @param {*} param1 song params
+   *
+   * @param {string} id Song id
+   * @param {any} param1 Song params
    */
   async updateSongById(id, {
     title, year, performer, genre, duration, albumId,
@@ -202,7 +207,8 @@ class SongService {
 
   /**
    * Delete song by id
-   * @param {string} id song id
+   *
+   * @param {string} id Song id
    */
   async deleteSongById(id) {
     const queryText = 'DELETE FROM songs WHERE id = $1 RETURNING id';
@@ -215,7 +221,8 @@ class SongService {
   }
 
   /**
-   * Check song exist
+   * Check kebenaran song di tabel
+   *
    * @param {string} id Song id
    */
   async verifyExistingSongById(id) {

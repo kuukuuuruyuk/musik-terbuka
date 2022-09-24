@@ -3,13 +3,14 @@ const {AuthorizationError} = require('../exception/authorization-error');
 const {NotFoundError} = require('../exception/not-found-error');
 
 /**
- * Playlist service
+ * Playlist
  */
 class PlaylistService {
   /**
-   * Playlist servis constructor
-   * @param {any} db Database Pool
-   * @param {any} service Service injeksi
+   * Playlist service
+   *
+   * @param {Pool} db Database connection
+   * @param {any} service Playlist service
    */
   constructor(db, service) {
     this._db = db;
@@ -18,9 +19,10 @@ class PlaylistService {
 
   /**
    * Create playlist
-   * @param {string} songName song name
-   * @param {string} owner user id
-   * @return {any} return json id plyalist
+   *
+   * @param {string} songName Song name
+   * @param {string} owner User id
+   * @return {string} Id plyalist
    */
   async storePlaylist(songName, owner) {
     const id = `playlist-${nanoid(16)}`;
@@ -37,9 +39,10 @@ class PlaylistService {
   }
 
   /**
-   * get playlist owner
+   * Get playlist owner
+   *
    * @param {string} owner user id
-   * @return {any} return json
+   * @return {any} Playlist model
    */
   async getPlaylists(owner) {
     const queryText = `
@@ -59,8 +62,9 @@ class PlaylistService {
 
   /**
    * Get playlist by id
-   * @param {string} id playlist id
-   * @return {any} json playlist
+   *
+   * @param {string} id Playlist id
+   * @return {any} Playlist model
    */
   async getPlaylistMappedById(id) {
     const queryText = `
@@ -80,7 +84,8 @@ class PlaylistService {
 
   /**
    * Delete playlist id
-   * @param {string} id playlist id
+   *
+   * @param {string} id Playlist id
    */
   async deletePlaylistById(id) {
     const queryText = 'DELETE FROM playlists WHERE id = $1';
@@ -95,8 +100,9 @@ class PlaylistService {
 
   /**
    * Cretate song to playlist
-   * @param {string} songId song id
-   * @param {string} playlistId playlist id
+   *
+   * @param {string} songId Song id
+   * @param {string} playlistId Playlist id
    */
   async storeSongToPlaylist(songId, playlistId) {
     const {songService} = this._service;
@@ -115,8 +121,9 @@ class PlaylistService {
 
   /**
    * Get song playlist id
-   * @param {string} playlistId playlist id
-   * @return {any} playlist id
+   *
+   * @param {string} playlistId Playlist id
+   * @return {any} Playlist model
    */
   async getSongsInPlaylist(playlistId) {
     const queryText = `
@@ -137,6 +144,7 @@ class PlaylistService {
 
   /**
    * Hapus song from playlist id by song id
+   *
    * @param {string} songId Song id
    */
   async deleteSongFromPlaylistBySongId(songId) {
@@ -154,8 +162,9 @@ class PlaylistService {
 
   /**
    * Crete plaulist activities
-   * @param {string} type type playlist
-   * @param {any} param1 user param
+   *
+   * @param {string} type Playlist type
+   * @param {any} param1 User model
    */
   async storePlaylistActivities(type, {playlistId, userId, songId}) {
     const id = `history-${nanoid(16)}`;
@@ -172,9 +181,10 @@ class PlaylistService {
   }
 
   /**
-   * get history
+   * Show history
+   *
    * @param {string} playlistId Playlist id
-   * @return {any} json playlist
+   * @return {any} Playlist model
    */
   async getHistoryByPlaylistId(playlistId) {
     const queryText = `
@@ -185,7 +195,10 @@ class PlaylistService {
       FROM playlist_song_activities
       INNER JOIN users ON users.id = playlist_song_activities.user_id
       INNER JOIN songs ON songs.id = playlist_song_activities.song_id
+      INNER JOIN playlists
+        ON playlists.id = playlist_song_activities.playlist_id
       WHERE playlist_song_activities.playlist_id = $1
+      ORDER BY playlist_song_activities.time ASC
       LIMIT 3
     `;
     const queryValues = [playlistId];
@@ -196,13 +209,19 @@ class PlaylistService {
       throw new NotFoundError('playlist ID tidak ditemukan');
     }
 
-    return result.rows;
+    return result.rows.map((item) => ({
+      username: item.username,
+      title: item.title,
+      action: item.action,
+      time: item.time,
+    }));
   }
 
   /**
-   * verifikasi playlist id
-   * @param {string} playlistId palylist id
-   * @param {string} owner user id
+   * Verifikasi playlist id
+   *
+   * @param {string} playlistId Palylist id
+   * @param {string} owner User id
    */
   async verifyPlaylistOwner(playlistId, owner) {
     const queryText = 'SELECT id, owner FROM playlists WHERE id = $1';
@@ -223,9 +242,10 @@ class PlaylistService {
   }
 
   /**
-   * verifikasi playlist access
-   * @param {string} playlistId playlist id
-   * @param {string} userId user id
+   * Verifikasi playlist access
+   *
+   * @param {string} playlistId Playlist id
+   * @param {string} userId User id
    */
   async verifyPlaylistAccess(playlistId, userId) {
     try {
