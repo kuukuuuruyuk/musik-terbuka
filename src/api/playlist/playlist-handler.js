@@ -1,13 +1,12 @@
-const {failedWebResponse} = require('../../utils/web-response');
-
 /**
- * Playlist handler
+ * Api plugin Playlist
  */
 class PlaylistHandler {
   /**
-   * Playlist constructor
-   * @param {any} service Servis dep injesi
-   * @param {any} validator validator dep injeksi
+   * Playlist handler
+   *
+   * @param {any} service Playlist services
+   * @param {any} validator Joi validator
    */
   constructor(service, validator) {
     this._service = service;
@@ -26,211 +25,192 @@ class PlaylistHandler {
   }
 
   /**
-   * Menambahakan playlist
-   * @param {Request} request Request body
-   * @param {any} h handler
-   * @return {any}
+   * Menambahakan playlis
+   *
+   * @param {Request} request Request payload
+   * @param {any} h Hapi handler
+   * @return {any} Playlist data
    */
   async postPlaylistHandler(request, h) {
-    try {
-      const {payload, auth} = request;
-      const {playlistValidator} = this._validator;
-      playlistValidator.validatePostPlaylist(payload);
-      const {name} = payload;
+    const {payload, auth} = request;
+    const {playlistValidator} = this._validator;
+    playlistValidator.validatePostPlaylist(payload);
+    const {name} = payload;
 
-      const {playlistService} = this._service;
-      const {id: credentialId} = auth.credentials;
-      const id = await playlistService.storePlaylist(name, credentialId);
+    const {playlistService} = this._service;
+    const {id: credentialId} = auth.credentials;
+    const id = await playlistService.storePlaylist(name, credentialId);
 
-      const _response = h.response({
-        status: 'success',
-        message: 'Playlist berhasil ditambahkan',
-        data: {playlistId: id},
-      });
+    const _response = h.response({
+      status: 'success',
+      message: 'Playlist berhasil ditambahkan',
+      data: {playlistId: id},
+    });
 
-      _response.code(201);
-      return _response;
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+    _response.code(201);
+    return _response;
   }
 
   /**
-   * Get playlist handler
-   * @param {Request} request body
+   * Show playlist handler
+   *
+   * @param {Request} request Request payload
    * @param {any} h Hapi handler
-   * @return {any}
+   * @return {any} Playlist data
    */
   async getPlaylistsHandler(request, h) {
-    try {
-      const {auth} = request;
-      const {id: userId} = auth.credentials;
-      const {playlistService} = this._service;
-      const playlists = await playlistService.getPlaylists(userId);
+    const {auth} = request;
+    const {id: userId} = auth.credentials;
+    const {playlistService} = this._service;
+    const playlists = await playlistService.getPlaylists(userId);
 
-      return h.response({
-        status: 'success',
-        data: {playlists},
-      });
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+    return h.response({
+      status: 'success',
+      data: {playlists},
+    });
   }
 
   /**
-   * Hpaus playlist
-   * @param {Request} request Request body
+   * Hapus data playlist
+   *
+   * @param {Request} request Request payload
    * @param {any} h Hapi handler
-   * @return {any}
+   * @return {any} Playlist data
    */
   async deletePlaylistHandler(request, h) {
-    try {
-      const {auth, params} = request;
-      const {playlistId} = params;
-      const {id: credentialId} = auth.credentials;
-      const {playlistService} = this._service;
-      await playlistService.verifyPlaylistOwner(playlistId, credentialId);
-      await playlistService.deletePlaylistById(playlistId);
+    const {auth, params} = request;
+    const {playlistId} = params;
+    const {id: credentialId} = auth.credentials;
+    const {playlistService} = this._service;
 
-      return h.response({
-        status: 'success',
-        message: 'Playlist berhasil dihapus',
-      });
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+    await playlistService.verifyPlaylistOwner(playlistId, credentialId);
+    await playlistService.deletePlaylistById(playlistId);
+
+    return h.response({
+      status: 'success',
+      message: 'Playlist berhasil dihapus',
+    });
   }
 
   /**
-   * post dong by id
-   * @param {*} request Request boddy
-   * @param {*} h Hapi handler
-   * @return {any}
+   * Create song by id
+   *
+   * @param {Request} request Request payload
+   * @param {any} h Hapi handler
+   * @return {any} Song playlist data
    */
   async postSongToPlaylistHandler(request, h) {
-    try {
-      const {payload, auth, params} = request;
-      const {playlistValidator} = this._validator;
+    const {payload, auth, params} = request;
+    const {playlistValidator} = this._validator;
 
-      playlistValidator.validatePostSongToPlaylist(payload);
+    playlistValidator.validatePostSongToPlaylist(payload);
 
-      const {songId} = payload;
-      const {playlistId} = params;
-      const {id: userId} = auth.credentials;
-      const {playlistService} = this._service;
+    const {songId} = payload;
+    const {playlistId} = params;
+    const {id: userId} = auth.credentials;
+    const {playlistService, songService} = this._service;
 
-      await playlistService.verifyPlaylistAccess(playlistId, userId);
-      await playlistService.storeSongToPlaylist(songId, playlistId);
-      await playlistService.storePlaylistActivities('add', {
-        playlistId,
-        userId,
-        songId,
-      });
+    await songService.verifyExistingSongById(songId);
+    await playlistService.verifyPlaylistAccess(playlistId, userId);
+    await playlistService.storeSongToPlaylist(songId, playlistId);
+    await playlistService.storePlaylistActivities('add', {
+      playlistId,
+      userId,
+      songId,
+    });
 
-      const _response = h.response({
-        status: 'success',
-        message: 'Lagu berhasil ditambahkan ke playlist',
-      });
+    const _response = h.response({
+      status: 'success',
+      message: 'Lagu berhasil ditambahkan ke playlist',
+    });
 
-      _response.code(201);
-      return _response;
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+    _response.code(201);
+    return _response;
   }
 
   /**
-   * get song from playlist
-   * @param {any} request Request body
+   * Show song from playlist
+   *
+   * @param {any} request Request payload
    * @param {any} h Hapi handler
-   * @return {any}
+   * @return {any} Song from playlist
    */
   async getSongsFromPlaylistHandler(request, h) {
-    try {
-      const {params, auth} = request;
-      const {playlistId} = params;
-      const {id: credentialId} = auth.credentials;
-      const {playlistService} = this._service;
+    const {params, auth} = request;
+    const {playlistId} = params;
+    const {id: credentialId} = auth.credentials;
+    const {playlistService} = this._service;
 
-      await playlistService.verifyPlaylistAccess(playlistId, credentialId);
-      const playlistData =
-        await playlistService.getPlaylistMappedById(playlistId);
-      const songsData =
-        await playlistService.getSongsInPlaylist(playlistId);
+    await playlistService.verifyPlaylistAccess(playlistId, credentialId);
+    const playlistData =
+      await playlistService.getPlaylistMappedById(playlistId);
+    const songsData =
+      await playlistService.getSongsInPlaylist(playlistId);
 
-      return h.response({
-        status: 'success',
-        data: {
-          playlist: {
-            ...playlistData,
-            songs: songsData,
-          },
+    return h.response({
+      status: 'success',
+      data: {
+        playlist: {
+          ...playlistData,
+          songs: songsData,
         },
-      });
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+      },
+    });
   }
 
   /**
-   * Delte song from playlist
-   * @param {Request} request Request body
+   * Delete song from playlist
+   *
+   * @param {Request} request Request payload
    * @param {any} h Hapi handler
    * @return {any}
    */
   async deleteSongFromPlaylistHandler(request, h) {
-    try {
-      const {payload, params, auth} = request;
-      const {playlistValidator} = this._validator;
-      playlistValidator.validateDeleteSongFromPlaylist(payload);
+    const {payload, params, auth} = request;
+    const {playlistValidator} = this._validator;
 
-      const {playlistId} = params;
-      const {songId} = payload;
-      const {id: userId} = auth.credentials;
-      const {playlistService} = this._service;
+    playlistValidator.validateDeleteSongFromPlaylist(payload);
 
-      await playlistService.verifyPlaylistAccess(playlistId, userId);
-      await playlistService.deleteSongFromPlaylistBySongId(songId);
-      await playlistService.storePlaylistActivities('delete', {
-        playlistId,
-        userId,
-        songId,
-      });
+    const {playlistId} = params;
+    const {songId} = payload;
+    const {id: userId} = auth.credentials;
+    const {playlistService} = this._service;
 
-      return h.response({
-        status: 'success',
-        message: 'Lagu berhasil dihapus dari playlist',
-      });
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+    await playlistService.verifyPlaylistAccess(playlistId, userId);
+    await playlistService.deleteSongFromPlaylistBySongId(songId);
+    await playlistService.storePlaylistActivities('delete', {
+      playlistId,
+      userId,
+      songId,
+    });
+
+    return h.response({
+      status: 'success',
+      message: 'Lagu berhasil dihapus dari playlist',
+    });
   }
 
   /**
-   * Get playlist activea
-   * @param {Request} request Request body
-   * @param {any} h Hapi server
-   * @return {any}
+   * Show playlist activitie
+   *
+   * @param {Request} request Request payload
+   * @param {any} h Hapi handler
+   * @return {any} Playlist data
    */
   async getPlalistActivitiesHandler(request, h) {
-    try {
-      const {params, auth} = request;
-      const {playlistId} = params;
-      const {id: userId} = auth.credentials;
-      const {playlistService} = this._service;
+    const {params, auth} = request;
+    const {playlistId} = params;
+    const {id: userId} = auth.credentials;
+    const {playlistService} = this._service;
 
-      await playlistService.verifyPlaylistAccess(playlistId, userId);
-      const activities =
-        await playlistService.getHistoryByPlaylistId(playlistId);
+    await playlistService.verifyPlaylistAccess(playlistId, userId);
+    const activities =
+      await playlistService.getHistoryByPlaylistId(playlistId);
 
-      return h.response({
-        status: 'success',
-        data: {playlistId, activities},
-      });
-    } catch (error) {
-      console.log('gh', error);
-      return failedWebResponse(error, h);
-    }
+    return h.response({
+      status: 'success',
+      data: {playlistId, activities},
+    });
   }
 }
 
