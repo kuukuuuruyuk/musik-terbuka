@@ -1,12 +1,13 @@
 const {ClientError} = require('./client-error');
 
 /**
- * Class for handle not found errror
+ * Not found error exception
  */
 class NotFoundError extends ClientError {
   /**
-   * Method konstruktor not found error
-   * @param {any} message message string
+   * Not found error
+   *
+   * @param {string} message Error message
    */
   constructor(message) {
     super(message, 404);

@@ -1,12 +1,13 @@
 const {ClientError} = require('./client-error');
 
 /**
- * Authentication error
+ * Authentication exception
  */
 class AuthenticationError extends ClientError {
   /**
-   * Authentication error constructor
-   * @param {string} message Message for error
+   * Authentication error
+   *
+   * @param {string} message Error message
    */
   constructor(message) {
     super(message, 401);
