@@ -1,12 +1,13 @@
 const {ClientError} = require('./client-error');
 
 /**
- * Clas Form andler invarian error
+ * Invariant exception
  */
 class InvariantError extends ClientError {
   /**
-   * method constructor for Invarian Error
-   * @param {any} message param error string
+   * Invarian error
+   *
+   * @param {any} message Error message
    */
   constructor(message) {
     super(message);

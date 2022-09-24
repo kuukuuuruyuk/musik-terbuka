@@ -1,13 +1,12 @@
-const {failedWebResponse} = require('../../utils/web-response');
-
 /**
- * User handler
+ * Api plugin user
  */
 class UserHandler {
   /**
-   * User handler constructor
-   * @param {any} service servis injeksi dep
-   * @param {any} validator validator injeki dependensi
+   * User handler
+   *
+   * @param {any} service User services
+   * @param {any} validator Joi validator
    */
   constructor(service, validator) {
     this._service = service;
@@ -18,30 +17,27 @@ class UserHandler {
 
   /**
    * Menambahkan pengguna/user baru
-   * @param {Request} request request body
-   * @param {any} h hapi server handler
-   * @return {any} return json
+   *
+   * @param {Request} request request payload
+   * @param {any} h Hapi handler
+   * @return {any} User data
    */
   async postUserHandler(request, h) {
-    try {
-      const {payload} = request;
-      const {userValidator} = this._validator;
+    const {payload} = request;
+    const {userValidator} = this._validator;
 
-      userValidator.validateUserPayload(payload);
+    userValidator.validateUserPayload(payload);
 
-      const {userService} = this._service;
-      const userId = await userService.storeUser(payload);
+    const {userService} = this._service;
+    const userId = await userService.storeUser(payload);
 
-      const _response = h.response({
-        status: 'success',
-        data: {userId},
-      });
+    const _response = h.response({
+      status: 'success',
+      data: {userId},
+    });
 
-      _response.code(201);
-      return _response;
-    } catch (error) {
-      return failedWebResponse(error, h);
-    }
+    _response.code(201);
+    return _response;
   }
 }
 

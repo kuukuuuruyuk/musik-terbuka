@@ -1,11 +1,12 @@
 /**
- * Class fr handler client error
+ * Client exception
  */
 class ClientError extends Error {
   /**
-   * method constructor client error
-   * @param {any} message show message error
-   * @param {number} statusCode number status code
+   * Client error
+   *
+   * @param {string} message Error message
+   * @param {number} statusCode Status code
    */
   constructor(message, statusCode = 400) {
     super(message);

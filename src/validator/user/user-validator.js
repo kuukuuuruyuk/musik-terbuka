@@ -1,12 +1,13 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * User Validator
+ * User
  */
 class UserValidator {
   /**
-   * User validator construktor
-   * @param {any} schema Joi schema dep injeksi
+   * User validator
+   *
+   * @param {any} schema Joi schema
    */
   constructor(schema) {
     this._schema = schema;
@@ -14,6 +15,7 @@ class UserValidator {
 
   /**
    * Validate user payload
+   *
    * @param {any} payload Request payload
    */
   validateUserPayload(payload) {

@@ -1,10 +1,11 @@
 const {ClientError} = require('../exception/client-error');
 
 /**
- * Funtion for handle failed response
- * @param {Error} error
- * @param {any} server
- * @return {any} response web
+ * Failed response
+ *
+ * @param {Error} error Error exception
+ * @param {any} server Hapi server
+ * @return {any} Response if error
  */
 function failedWebResponse(error, server) {
   if (error instanceof ClientError) {

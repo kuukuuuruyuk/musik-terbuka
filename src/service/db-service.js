@@ -1,10 +1,11 @@
 /**
- * Database service
+ * DBService
  */
 class DBService {
   /**
-   * Database service constructtor
-   * @param {any} db Databse pool
+   * Database service
+   *
+   * @param {Pool} db Database pool
    */
   constructor(db) {
     this._db = db;
@@ -22,7 +23,8 @@ class DBService {
       users,
       playlists,
       collaborations,
-      playlist_song_activities
+      playlist_song_activities,
+      user_album_likes
     `;
 
     await this._db.query(queryText);

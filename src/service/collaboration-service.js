@@ -2,12 +2,13 @@ const {nanoid} = require('nanoid');
 const {InvariantError} = require('../exception/invariant-error');
 
 /**
- * Collaboration service
+ * Collaboration
  */
 class CollaborationService {
   /**
    * Collaboration service
-   * @param {any} db Db pool
+   *
+   * @param {Pool} db Database connection
    */
   constructor(db) {
     this._db = db;
@@ -15,8 +16,9 @@ class CollaborationService {
 
   /**
    * Create collaboration
-   * @param {any} playlistId playlist id
-   * @param {string} userId user id
+   *
+   * @param {string} playlistId playlist id
+   * @param {string} userId User id
    * @return {any}
    */
   async storeCollaboration(playlistId, userId) {
@@ -39,9 +41,10 @@ class CollaborationService {
   }
 
   /**
-   * Hapus data collaboiration
-   * @param {string} playlistId playlist id
-   * @param {string} userId user id
+   * Hapus data collaboration
+   *
+   * @param {string} playlistId Playlist id
+   * @param {string} userId User id
    */
   async deleteCollaboration(playlistId, userId) {
     const queryText = `
@@ -49,7 +52,7 @@ class CollaborationService {
     WHERE playlist_id = $1 AND user_id = $2
     `;
     const queryValues = [playlistId, userId];
-    const result = await this._pool.query(queryText, queryValues);
+    const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
       throw new InvariantError('Gagal menghapus kolaborasi');
@@ -58,8 +61,9 @@ class CollaborationService {
 
   /**
    * Verifikasi collaborator
+   *
    * @param {string} playlistId Playlist id
-   * @param {string} userId user id
+   * @param {string} userId User id
    */
   async verifyCollaborator(playlistId, userId) {
     const queryText = `
@@ -70,7 +74,7 @@ class CollaborationService {
     WHERE playlist_id = $1 AND user_id = $2
     `;
     const queryValues = [playlistId, userId];
-    const result = await this._pool.query(queryText, queryValues);
+    const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {
       throw new InvariantError('Gagal memverifikasi kolaborasi');

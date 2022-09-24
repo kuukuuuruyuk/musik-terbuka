@@ -48,7 +48,7 @@ async function bootstrap() {
 
   // Show info server on app run
   console.log({
-    i: `Server berjalan pada ${_server.info.uri} ${process.env.NODE_ENV}`,
+    i: `Server berjalan pada ${_server.info.uri} on ${process.env.NODE_ENV}`,
   });
 }
 

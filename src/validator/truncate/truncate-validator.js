@@ -1,12 +1,13 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * Truncate vlidator
+ * Truncate
  */
 class TruncateValidator {
   /**
    * Truncate validator
-   * @param {any} schema Schema object
+   *
+   * @param {any} schema Joi schema
    */
   constructor(schema) {
     this._schema = schema;
@@ -14,6 +15,7 @@ class TruncateValidator {
 
   /**
    * Validate truncate payload
+   *
    * @param {any} payload Request payload
    */
   validatePayload(payload) {

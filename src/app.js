@@ -1,8 +1,6 @@
 const {Pool} = require('pg');
 const validationSchema = require('./validator/validator-shcema');
 const api = require('./api');
-const {ClientError} = require('./exception/client-error');
-const {failedWebResponse} = require('./utils/web-response');
 // Service
 const {AlbumService} = require('./service/album-service');
 const {SongService} = require('./service/song-service');
@@ -23,13 +21,19 @@ const {TokenManager} = require('./tokenize/token-manager');
 const {TruncateValidator} = require('./validator/truncate/truncate-validator');
 const {CollaborationValidator} =
   require('./validator/collaboration/collaboration-validator');
+// Exceptions
+const {ClientError} = require('./exception/client-error');
+const {NotFoundError} = require('./exception/not-found-error');
+const {AuthorizationError} = require('./exception/authorization-error');
+const {AuthenticationError} = require('./exception/authentication-error');
+const {InvariantError} = require('./exception/invariant-error');
 
 /**
- * App server
+ * App
  * @param {any} server Hapi server
  */
 async function appServer(server) {
-  // Plugin api for route
+  // Plugin api for register routes
   const {
     albumApi,
     songApi,
@@ -42,7 +46,7 @@ async function appServer(server) {
   // Database pool
   const pool = new Pool();
 
-  // Service
+  // Services
   const albumService = new AlbumService(pool);
   const songService = new SongService(pool);
   const userService = new UserService(pool);
@@ -69,36 +73,63 @@ async function appServer(server) {
 
   /**
    * On handle pre response
-   * @param {any} request Reques from user
+   *
+   * @param {Request} request Request payload
    * @param {any} h Hapi handler
-   * @return {any} retun response
+   * @return {any} Hapi response
    */
-  function handleOnPreResponse(request, h) {
-    const {response} = request;
+  function onPreResponseHandler(request, h) {
+    const {response: _response} = request;
 
-    if (response instanceof Error) {
-      if (response instanceof ClientError) {
-        const _response = h.response({
+    if (_response instanceof Error) {
+      if (_response instanceof ClientError) {
+        return h.response({
           status: 'fail',
-          message: response.message,
-        });
-
-        _response.code(response.statusCode);
-        return _response;
+          message: _response.message,
+        }).code(_response.statusCode);
       }
 
-      if (!response.isServer) return h.continue;
+      if (_response instanceof NotFoundError) {
+        return h.response({
+          status: 'error',
+          message: _response.message,
+        }).code(404);
+      }
 
-      const _response = h.response({
+      if (_response instanceof AuthorizationError) {
+        return h.response({
+          status: 'error',
+          message: _response.message,
+        }).code(403);
+      }
+
+      if (_response instanceof AuthenticationError) {
+        return h.response({
+          status: 'error',
+          message: _response.message,
+        }).code(401);
+      }
+
+      if (_response instanceof InvariantError) {
+        const {statusCode} = _response.output;
+
+        return h.response({
+          status: 'error',
+          message: _response.message,
+        }).code(statusCode);
+      }
+
+      if (!_response.isServer) {
+        return h.continue;
+      }
+
+      return h.response({
         status: 'error',
         message: 'Maaf, terjadi kegagalan pada server.',
-      });
-
-      _response.code(500);
-      return _response;
+      }).code(500);
     }
 
-    return h.continue || response;
+    return h.continue || _response;
   }
 
   // Routes
@@ -119,27 +150,29 @@ async function appServer(server) {
       method: 'DELETE',
       path: '/truncate',
       handler: async (request, h) => {
-        try {
-          const {payload} = request;
+        const {payload} = request;
 
-          truncateValidator.validatePayload(payload);
+        truncateValidator.validatePayload(payload);
 
-          await dbService.truncateDB();
+        const {token} = payload;
 
-          const _response = h.response({
-            status: 'success',
-            message: 'berhasil mentruncate semua data table',
-          });
-
-          return _response;
-        } catch (error) {
-          return failedWebResponse(error, h);
+        if (token !== process.env.MYTRUNCATE_TOKEN) {
+          throw new InvariantError('Token is invalid man');
         }
+
+        await dbService.truncateDB();
+
+        const _response = h.response({
+          status: 'success',
+          message: 'berhasil mentruncate semua data table',
+        });
+
+        return _response;
       },
     },
   ]);
 
-  // Regis local plugin
+  // Register local api plugin
   await server.register([
     {
       plugin: songApi,
@@ -165,7 +198,7 @@ async function appServer(server) {
     {
       plugin: playlistApi,
       options: {
-        service: {playlistService},
+        service: {playlistService, songService},
         validator: {playlistValidator},
       },
     },
@@ -189,7 +222,7 @@ async function appServer(server) {
     },
   ]);
 
-  server.ext('onPreResponse', handleOnPreResponse);
+  server.ext('onPreResponse', onPreResponseHandler);
 }
 
 module.exports = {appServer};
