@@ -1,12 +1,13 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * Authemtication validator
+ * Authentication
  */
 class AuthenticationValidator {
   /**
-   * Authentication validator construktor
-   * @param {any} schema Schema join object
+   * Authentication validator
+   *
+   * @param {any} schema Schema joi
    */
   constructor(schema) {
     this._schema = schema;
@@ -14,7 +15,8 @@ class AuthenticationValidator {
 
   /**
    * Validate post auth
-   * @param {any} payload payload request
+   *
+   * @param {any} payload Request payload
    */
   validatePostAuthPayload(payload) {
     const {postAuthPayloadSchema} = this._schema;
@@ -26,8 +28,9 @@ class AuthenticationValidator {
   }
 
   /**
-   * Validate update payload
-   * @param {any} payload Payload request
+   * Validate update authentication
+   *
+   * @param {any} payload Request payload
    */
   validatePutAuthPayload(payload) {
     const {putAuthPayloadSchema} = this._schema;
@@ -39,8 +42,9 @@ class AuthenticationValidator {
   }
 
   /**
-   * Validate delete payload
-   * @param {any} payload Payload request
+   * Validate delete
+   *
+   * @param {any} payload Request payload
    */
   validateDeleteAuthPayload(payload) {
     const {deleteAuthPayloadSchema} = this._schema;

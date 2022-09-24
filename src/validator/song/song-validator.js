@@ -1,12 +1,13 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * Song validator
+ * Song
  */
 class SongValidator {
   /**
-   * method constructor for song validator
-   * @param {any} schema Schema joi obejct
+   * Song validator
+   *
+   * @param {any} schema Joi schema
    */
   constructor(schema) {
     this._schema = schema;
@@ -14,7 +15,8 @@ class SongValidator {
 
   /**
    * Validate song payload
-   * @param {any} payload request payload
+   *
+   * @param {any} payload Request payload
    */
   validateSongPayload(payload) {
     const {songPayloadSchema} = this._schema;

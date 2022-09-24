@@ -6,6 +6,7 @@ const postPlaylistSchema = Joi.object({
 
 const postSongToPlaylistSchema = Joi.object({
   songId: Joi.string().required(),
+  playlistId: Joi.string(),
 });
 
 const deleteSongFromPlaylistSchema = Joi.object({

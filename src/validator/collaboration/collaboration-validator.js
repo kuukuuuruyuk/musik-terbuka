@@ -1,19 +1,21 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * Collaboration validator
+ * Collaboration
  */
 class CollaborationValidator {
   /**
-   * Collaboration construcktor
-   * @param {any} schema schema validator
+   * Collaboration validator
+   *
+   * @param {any} schema Joi schema
    */
   constructor(schema) {
     this._schema = schema;
   }
 
   /**
-   * Validate collaboration
+   * Validate post collaboration
+   *
    * @param {any} payload Request payload
    */
   validatePostCollaboration(payload) {
@@ -26,8 +28,9 @@ class CollaborationValidator {
   }
 
   /**
-   * Validate dele collaboration
-   * @param {any} payload request payload
+   * Validate delete collaboration
+   *
+   * @param {any} payload Request Payload
    */
   validateDeleteCollaboration(payload) {
     const {deleteCollaborationSchema} = this._schema;

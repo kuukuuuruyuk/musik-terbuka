@@ -1,19 +1,21 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * Album validator
+ * Album
  */
 class AlbumValidator {
   /**
-   * Album construktor
-   * @param {any} schema Schema joi object
+   * Album validator
+   *
+   * @param {any} schema Schema joi
    */
   constructor(schema) {
     this._schema = schema;
   }
   /**
-   * VAlidate album payload
-   * @param {any} payload requesty payload
+   * Validate album payload
+   *
+   * @param {any} payload Request payload
    */
   validateAlbumPayload(payload) {
     const {albumPayloadSchema} = this._schema;

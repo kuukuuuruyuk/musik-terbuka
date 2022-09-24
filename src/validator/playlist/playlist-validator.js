@@ -1,12 +1,13 @@
 const {InvariantError} = require('../../exception/invariant-error');
 
 /**
- * Playlist validator
+ * Playlist
  */
 class PlaylistValidator {
   /**
-   * Playlist validator constructor
-   * @param {any} schema Schema joi object
+   * Playlist validator
+   *
+   * @param {any} schema Joi schema object
    */
   constructor(schema) {
     this._schema = schema;
@@ -14,6 +15,7 @@ class PlaylistValidator {
 
   /**
    * Validate post playlist
+   *
    * @param {any} payload Request payload
    */
   validatePostPlaylist(payload) {
@@ -27,7 +29,8 @@ class PlaylistValidator {
 
   /**
    * Validate post song to playlist
-   * @param {any} payload payload request
+   *
+   * @param {any} payload Request payload
    */
   validatePostSongToPlaylist(payload) {
     const {postSongToPlaylistSchema} = this._schema;
@@ -39,7 +42,8 @@ class PlaylistValidator {
   }
 
   /**
-   * validate delete song from playlist
+   * Validate delete song from playlist
+   *
    * @param {any} payload Request payload
    */
   validateDeleteSongFromPlaylist(payload) {
