@@ -6,9 +6,10 @@ const {InvariantError} = require('../exception/invariant-error');
  */
 class TokenManager {
   /**
-   * Generate access token
-   * @param {any} payload request payload
-   * @return {any}
+   * Token manager service
+   *
+   * @param {any} payload Hapi payload
+   * @return {string} Access token
    */
   generateAccessToken(payload) {
     return Jwt.token.generate(payload, process.env.ACCESS_TOKEN_KEY);
@@ -16,8 +17,9 @@ class TokenManager {
 
   /**
    * Generate refersh token
-   * @param {any} payload request payload
-   * @return {any}
+   *
+   * @param {any} payload Hapi payload
+   * @return {string} Refresh token
    */
   generateRefreshToken(payload) {
     return Jwt.token.generate(payload, process.env.REFRESH_TOKEN_KEY);
@@ -25,8 +27,9 @@ class TokenManager {
 
   /**
    * Verifikasi refresh token
+   *
    * @param {string} refreshToken refresh token
-   * @return {any}
+   * @return {any} Hapi jwt payload
    */
   verifyRefreshToken(refreshToken) {
     try {
