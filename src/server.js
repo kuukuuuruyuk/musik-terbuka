@@ -4,6 +4,7 @@ require('dotenv').config();
 const Hapi = require('@hapi/hapi');
 const hapiAuthJwt = require('@hapi/jwt');
 const {appServer} = require('./app');
+const {JWT_APP_KEY} = require('./utils/key-token');
 
 /**
  * Method for handle starting the app
@@ -19,12 +20,10 @@ async function bootstrap() {
   });
 
   // Regis eksternal plugin
-  await _server.register([
-    {plugin: hapiAuthJwt},
-  ]);
+  await _server.register([{plugin: hapiAuthJwt}]);
 
   // Mendefinisikan strategy autentikasi jwt
-  _server.auth.strategy('musicterbuka_jwt', 'jwt', {
+  _server.auth.strategy(JWT_APP_KEY, 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
       aud: false,

@@ -138,23 +138,21 @@ async function appServer(server) {
       method: 'GET',
       path: '/',
       handler: (_request, h) => {
-        const _sayHello = 'Hello World!';
-        const _response = h.response({
-          message: _sayHello,
+        return h.response({
+          data: {
+            app_name: 'Musik terbuka',
+            version: 'v3',
+          },
         });
-
-        return _response;
       },
     },
     {
       method: 'DELETE',
       path: '/truncate',
       handler: async (request, h) => {
-        const {payload} = request;
+        truncateValidator.validatePayload(request.payload);
 
-        truncateValidator.validatePayload(payload);
-
-        const {token} = payload;
+        const {token} = request.payload;
 
         if (token !== process.env.MYTRUNCATE_TOKEN) {
           throw new InvariantError('Token is invalid man');
@@ -162,12 +160,10 @@ async function appServer(server) {
 
         await dbService.truncateDB();
 
-        const _response = h.response({
+        return h.response({
           status: 'success',
           message: 'berhasil mentruncate semua data table',
         });
-
-        return _response;
       },
     },
   ]);
