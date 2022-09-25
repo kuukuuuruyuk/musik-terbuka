@@ -29,14 +29,15 @@ class AuthenticationHandler {
 
     this._validator.authValidator.validatePostAuthPayload(payload);
 
-    const {username, password} = payload;
     const {
       authService,
       userService,
       tokenManager: _tokenManager,
     } = this._service;
 
+    const {username, password} = payload;
     const id = await userService.userCrendential(username, password);
+
     const userId = {id};
     const jwtAccessToken = await _tokenManager.generateAccessToken(userId);
     const jwtRefreshToken = await _tokenManager.generateRefreshToken(userId);
