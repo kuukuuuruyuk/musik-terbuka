@@ -20,7 +20,7 @@ class AuthenticationService {
    * @param {any} param0 Store token param
    */
   async storeToken({userId, accessToken, refershToken}) {
-    const id = `auth-${nanoid(16)}`;
+    const authId = nanoid(16);
     const queryText = `
     INSERT INTO authentications(id,
       access_token,
@@ -28,7 +28,7 @@ class AuthenticationService {
       user_id
     ) VALUES ($1, $2, $3, $4)
     `;
-    const queryValues = [id, accessToken, refershToken, userId];
+    const queryValues = [authId, accessToken, refershToken, userId];
     await this._db.query(queryText, queryValues);
   }
 

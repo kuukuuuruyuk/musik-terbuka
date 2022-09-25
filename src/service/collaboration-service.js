@@ -22,7 +22,7 @@ class CollaborationService {
    * @return {any}
    */
   async storeCollaboration(playlistId, userId) {
-    const id = `collab-${nanoid(16)}`;
+    const collabId = nanoid(16);
     const queryText = `
     INSERT INTO collaborations(id,
       playlist_id,
@@ -30,7 +30,7 @@ class CollaborationService {
     ) VALUES ($1, $2, $3)
     RETURNING id
     `;
-    const queryValues = [id, playlistId, userId];
+    const queryValues = [collabId, playlistId, userId];
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rowCount) {

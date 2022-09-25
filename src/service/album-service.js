@@ -21,7 +21,7 @@ class AlbumService {
    * @param {any} param0 Album model
    */
   async storeAlbum({name, year}) {
-    const id = nanoid();
+    const albumId = nanoid(16);
     const queryText = `
     INSERT INTO albums(id,
       name,
@@ -29,7 +29,7 @@ class AlbumService {
     ) VALUES($1, $2, $3)
     RETURNING id
     `;
-    const queryValues = [`album-${id}`, name, year];
+    const queryValues = [albumId, name, year];
     const res = await this._db.query(queryText, queryValues);
 
     if (!res.rows[0].id) throw new InvariantError('Gagal menambahakan album');
