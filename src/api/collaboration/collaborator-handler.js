@@ -61,9 +61,8 @@ class CollaborationHandler {
    */
   async deleteCollaborationHandler(request, h) {
     const {payload, auth} = request;
-    const {collaborationValidator} = this._validator;
 
-    collaborationValidator.validateDeleteCollaboration(payload);
+    this._validator.collaborationValidator.validateDeleteCollaboration(payload);
 
     const {id: credentialId} = auth.credentials;
     const {playlistId, userId} = payload;
