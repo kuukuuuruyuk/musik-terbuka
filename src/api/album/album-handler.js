@@ -23,25 +23,20 @@ class AlbumHandler {
    *
    * @param {Request} request Request payload
    * @param {any} h Hapi handler
-   * @return {any} Album data
+   * @return {any} Album data as 201 code is success
    */
   async postAlbumHandler(request, h) {
     const {payload} = request;
-    const {albumValidator} = this._validator;
 
-    albumValidator.validateAlbumPayload(payload);
+    this._validator.albumValidator.validateAlbumPayload(payload);
 
     const {name, year} = payload;
-    const {albumService: _albumService} = this._service;
-    const albumId = await _albumService.storeAlbum({name, year});
+    const albumId = await this._service.albumService.storeAlbum({name, year});
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       data: {albumId},
-    });
-
-    _response.code(201);
-    return _response;
+    }).code(201);
   }
 
   /**
@@ -52,23 +47,20 @@ class AlbumHandler {
    * @return {any} Album data
    */
   async getAlbumByIdHandler(request, h) {
-    const {id} = request.params;
+    const {id: albumId} = request.params;
     const {
       albumService,
       songService,
     } = this._service;
-    const album = await albumService.getAlbumById(id);
-    const songs = await songService.getSongsByAlbumId(id);
+    const album = await albumService.getAlbumById(albumId);
+    const songs = await songService.getSongsByAlbumId(albumId);
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       data: {
         album: {...album, songs},
       },
     });
-
-    _response.code(200);
-    return _response;
   }
 
   /**
@@ -80,22 +72,16 @@ class AlbumHandler {
    */
   async putAlbumByIdHandler(request, h) {
     const {params, payload} = request;
-    const {albumValidator: _albumValidator} = this._validator;
 
-    await _albumValidator.validateAlbumPayload(payload);
+    this._validator.albumValidator.validateAlbumPayload(payload);
 
-    const {id} = params;
-    const {albumService: _albumService} = this._service;
+    const {id: albumId} = params;
+    await this._service.albumService.updateAlbumById(albumId, payload);
 
-    await _albumService.updateAlbumById(id, payload);
-
-    const _response = h.response({
+    return h.response({
       status: 'success',
       message: 'Album has beed updated!',
     });
-
-    _response.code(200);
-    return _response;
   }
 
   /**
@@ -106,17 +92,14 @@ class AlbumHandler {
    * @return {any} Album data
    */
   async deleteAlbumByIdHandler(request, h) {
-    const {id} = request.params;
-    const {albumService: _albumService} = this._service;
+    const {id: albumId} = request.params;
 
-    await _albumService.deleteAlbumById(id);
+    await this._service.albumService.deleteAlbumById(albumId);
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       message: 'Album has beed deleted!',
     });
-
-    return _response;
   }
 }
 

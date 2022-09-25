@@ -167,9 +167,8 @@ class PlaylistHandler {
    */
   async deleteSongFromPlaylistHandler(request, h) {
     const {payload, params, auth} = request;
-    const {playlistValidator} = this._validator;
 
-    playlistValidator.validateDeleteSongFromPlaylist(payload);
+    this._validator.playlistValidator.validateDeleteSongFromPlaylist(payload);
 
     const {playlistId} = params;
     const {songId} = payload;

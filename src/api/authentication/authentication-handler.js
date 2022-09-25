@@ -26,9 +26,8 @@ class AuthenticationHandler {
    */
   async postAuthenticationHandler(request, h) {
     const {payload} = request;
-    const {authValidator} = this._validator;
 
-    authValidator.validatePostAuthPayload(payload);
+    this._validator.authValidator.validatePostAuthPayload(payload);
 
     const {username, password} = payload;
     const {
@@ -36,6 +35,7 @@ class AuthenticationHandler {
       userService,
       tokenManager: _tokenManager,
     } = this._service;
+
     const id = await userService.userCrendential(username, password);
     const userId = {id};
     const jwtAccessToken = await _tokenManager.generateAccessToken(userId);
@@ -47,17 +47,14 @@ class AuthenticationHandler {
       userId: userId.id,
     });
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       message: 'Autentikasi berhasil!',
       data: {
         accessToken: jwtAccessToken,
         refreshToken: jwtRefreshToken,
       },
-    });
-
-    _response.code(201);
-    return _response;
+    }).code(201);
   }
 
   /**
@@ -69,9 +66,8 @@ class AuthenticationHandler {
    */
   async putAuthenticationHandler(request, h) {
     const {payload} = request;
-    const {authValidator} = this._validator;
 
-    authValidator.validatePutAuthPayload(payload);
+    this._validator.authValidator.validatePutAuthPayload(payload);
 
     const {refreshToken} = payload;
     const {
@@ -84,13 +80,11 @@ class AuthenticationHandler {
     const {id} = await _tokenManager.verifyRefreshToken(refreshToken);
     const jwtAccessToken = await _tokenManager.generateAccessToken({id});
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       message: 'Access Token berhasil diperbarui',
       data: {accessToken: jwtAccessToken},
     });
-
-    return _response;
   }
 
   /**
@@ -102,9 +96,8 @@ class AuthenticationHandler {
    */
   async deleteAuthenticationHandler(request, h) {
     const {payload} = request;
-    const {authValidator} = this._validator;
 
-    authValidator.validateDeleteAuthPayload(payload);
+    this._validator.authValidator.validateDeleteAuthPayload(payload);
 
     const {refreshToken} = payload;
     const {
@@ -115,12 +108,10 @@ class AuthenticationHandler {
     await _tokenManager.verifyRefreshToken(refreshToken);
     await authService.deleteToken(refreshToken);
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       message: 'Refresh token berhasil dihapus',
     });
-
-    return _response;
   }
 }
 

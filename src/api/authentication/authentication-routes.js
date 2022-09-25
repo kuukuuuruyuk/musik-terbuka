@@ -1,17 +1,19 @@
 /**
- * Authentication route
+ * Authentication
  */
 class AuthenticationRoute {
   /**
-   * Authentication route constructor
-   * @param {any} handler Hapi server handler
+   * Authentication route
+   *
+   * @param {any} handler Hapi handler
    */
   constructor(handler) {
     this._h = handler;
   }
 
   /**
-   * Authentication routes
+   * Routes collections
+   *
    * @return {Array}
    */
   routes() {

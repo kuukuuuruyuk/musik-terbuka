@@ -14,8 +14,7 @@ const {PlaylistRoute} = require('./playlist/playlist-routes');
 const {AlbumRoute} = require('./album/album-routes');
 const {SongRoute} = require('./song/song-routes');
 const {UserRoute} = require('./user/user-routes');
-
-const APP_JWT_KEY = 'musicterbuka_jwt';
+const {JWT_APP_KEY} = require('../utils/key-token');
 
 /**
  * Api handler
@@ -54,7 +53,7 @@ function api() {
       name: 'playlists',
       version: '1.0.0',
       register: async function(server, {service, validator}) {
-        const options = {auth: APP_JWT_KEY};
+        const options = {auth: JWT_APP_KEY};
         const serverHandler = new PlaylistHandler(service, validator);
         const serverRoute = new PlaylistRoute(serverHandler);
         server.route(serverRoute.routes(options));
@@ -73,7 +72,7 @@ function api() {
       name: 'collaborations',
       version: '1.0.0',
       register: async function(server, {service, validator}) {
-        const options = {auth: APP_JWT_KEY};
+        const options = {auth: JWT_APP_KEY};
         const serverHandler = new CollaborationHandler(service, validator);
         const serverRoute = new CollaborationRoute(serverHandler);
         server.route(serverRoute.routes(options));
