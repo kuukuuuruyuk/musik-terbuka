@@ -1,10 +1,11 @@
 /**
- * Album routes
+ * Album
  */
 class AlbumRoute {
   /**
-   * Method construcktor for album route
-   * @param {any} handler props handler param
+   * Album route
+   *
+   * @param {any} handler Hapi handler
    */
   constructor(handler) {
     this._h = handler;

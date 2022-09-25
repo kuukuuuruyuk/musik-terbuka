@@ -1,7 +1,9 @@
 const Joi = require('joi');
 
 const postPlaylistSchema = Joi.object({
-  name: Joi.string().required(),
+  name: Joi.string()
+      .max(255)
+      .required(),
 });
 
 const postSongToPlaylistSchema = Joi.object({

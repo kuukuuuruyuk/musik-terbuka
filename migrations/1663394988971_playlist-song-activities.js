@@ -13,7 +13,7 @@ exports.up = (pgm) => {
       onDelete: 'cascade',
     },
     song_id: {
-      type: 'varchar(255)',
+      type: 'text',
       notNull: true,
       references: '"songs"',
       onDelete: 'cascade',

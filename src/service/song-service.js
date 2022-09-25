@@ -28,7 +28,7 @@ class SongService {
     duration,
     albumId,
   }) {
-    const id = nanoid();
+    const songId = nanoid(16);
     const queryText = `
     INSERT INTO songs(id,
       title,
@@ -41,7 +41,7 @@ class SongService {
     RETURNING id
     `;
     const queryValues = [
-      `song-${id}`,
+      songId,
       title,
       year,
       performer,
@@ -184,7 +184,12 @@ class SongService {
    * @param {any} param1 Song params
    */
   async updateSongById(id, {
-    title, year, performer, genre, duration, albumId,
+    title,
+    year,
+    performer,
+    genre,
+    duration,
+    albumId,
   }) {
     const queryText = `
     UPDATE songs

@@ -25,9 +25,9 @@ class PlaylistService {
    * @return {string} Id plyalist
    */
   async storePlaylist(songName, owner) {
-    const id = `playlist-${nanoid(16)}`;
+    const playlistId = nanoid(16);
     const queryText = 'INSERT INTO playlists VALUES ($1, $2, $3) RETURNING id';
-    const queryValues = [id, songName, owner];
+    const queryValues = [playlistId, songName, owner];
 
     const result = await this._db.query(queryText, queryValues);
 
@@ -108,9 +108,9 @@ class PlaylistService {
     const {songService} = this._service;
     await songService.verifyExistingSongById(songId);
 
-    const id = `pl-${nanoid(16)}`;
+    const plSongId = nanoid(16);
     const queryText = 'INSERT INTO playlist_songs VALUES ($1, $2, $3)';
-    const queryValues = [id, playlistId, songId];
+    const queryValues = [plSongId, playlistId, songId];
 
     const result = await this._db.query(queryText, queryValues);
 
@@ -167,12 +167,19 @@ class PlaylistService {
    * @param {any} param1 User model
    */
   async storePlaylistActivities(type, {playlistId, userId, songId}) {
-    const id = `history-${nanoid(16)}`;
+    const activitieId = nanoid(16);
     const timeNow = new Date().toISOString();
 
     const queryText =
       'INSERT INTO playlist_song_activities VALUES ($1, $2, $3, $4, $5, $6)';
-    const queryValues = [id, playlistId, songId, userId, type, timeNow];
+    const queryValues = [
+      activitieId,
+      playlistId,
+      songId,
+      userId,
+      type,
+      timeNow,
+    ];
 
     const result = await this._db.query(queryText, queryValues);
     if (!result.rowCount) {

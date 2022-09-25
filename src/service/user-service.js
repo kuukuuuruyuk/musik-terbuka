@@ -29,7 +29,7 @@ class UserService {
   }) {
     await this._isUserExist(username);
 
-    const id = `user-${nanoid(16)}`;
+    const userId = nanoid(16);
     const hashedPassword = await bcrypt.hash(password, 10);
     const queryText = `
     INSERT INTO users (id,
@@ -39,7 +39,7 @@ class UserService {
     ) VALUES($1, $2, $3, $4)
     RETURNING id
     `;
-    const queryValues = [id, username, hashedPassword, fullname];
+    const queryValues = [userId, username, hashedPassword, fullname];
     const result = await this._db.query(queryText, queryValues);
 
     if (!result.rows.length) throw new InvariantError('User gagal ditambahkan');
