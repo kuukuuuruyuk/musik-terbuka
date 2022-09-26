@@ -39,12 +39,16 @@ class UserService {
     ) VALUES($1, $2, $3, $4)
     RETURNING id
     `;
-    const queryValues = [userId, username, hashedPassword, fullname];
-    const result = await this._db.query(queryText, queryValues);
+    const users = await this._db.query(queryText, [
+      userId,
+      username,
+      hashedPassword,
+      fullname,
+    ]);
 
-    if (!result.rows.length) throw new InvariantError('User gagal ditambahkan');
+    if (!users.rows.length) throw new InvariantError('User gagal ditambahkan');
 
-    return result.rows[0].id;
+    return users.rows[0].id;
   }
 
   /**
@@ -58,11 +62,10 @@ class UserService {
     FROM users
     WHERE username = $1
     `;
-    const queryValues = [username];
 
-    const result = await this._db.query(queryText, queryValues);
+    const users = await this._db.query(queryText, [username]);
 
-    if (result.rows.length > 0) {
+    if (users.rows.length > 0) {
       const _message = 'Gagal menambahkan User baru, Username sudah ada';
       throw new InvariantError(_message);
     }
@@ -71,13 +74,12 @@ class UserService {
   /**
    * Verifikasi user by id
    *
-   * @param {string} id User id
+   * @param {string} userId User id
    */
-  async verifyExistingUserWithUserId(id) {
+  async verifyExistingUserWithUserId(userId) {
     const queryText = 'SELECT id FROM users WHERE id = $1';
-    const queryValues = [id];
 
-    const result = await this._db.query(queryText, queryValues);
+    const result = await this._db.query(queryText, [userId]);
 
     if (!result.rowCount) {
       throw new NotFoundError('Not found music ID!');
@@ -93,22 +95,20 @@ class UserService {
    */
   async userCrendential(username, password) {
     const queryText = 'SELECT id, password FROM users WHERE username = $1';
-    const queryValues = [username];
+    const users = await this._db.query(queryText, [username]);
 
-    const result = await this._db.query(queryText, queryValues);
-
-    if (!result.rowCount) {
+    if (!users.rowCount) {
       throw new AuthenticationError('Username yang anda berikan salah...');
     }
 
-    const {id, password: hashedPassword} = result.rows[0];
+    const {id: userId, password: hashedPassword} = users.rows[0];
     const match = await bcrypt.compare(password, hashedPassword);
 
     if (!match) {
       throw new AuthenticationError('Password yang anda berikan salah');
     }
 
-    return id;
+    return userId;
   }
 }
 

@@ -29,20 +29,19 @@ class AuthenticationHandler {
 
     this._validator.authValidator.validatePostAuthPayload(payload);
 
-    const {
-      authService,
-      userService,
-      tokenManager: _tokenManager,
-    } = this._service;
+    const token = await this._service.userService.userCrendential(
+        payload.username,
+        payload.password,
+    );
 
-    const {username, password} = payload;
-    const id = await userService.userCrendential(username, password);
+    const userId = {id: token?.id};
 
-    const userId = {id};
-    const jwtAccessToken = await _tokenManager.generateAccessToken(userId);
-    const jwtRefreshToken = await _tokenManager.generateRefreshToken(userId);
+    const [jwtAccessToken, jwtRefreshToken] = await Promise.all([
+      this._service.tokenManager.generateAccessToken(userId),
+      this._service.tokenManager.generateRefreshToken(userId),
+    ]);
 
-    await authService.storeToken({
+    await this._service.authService.storeToken({
       accessToken: jwtRefreshToken,
       refreshToken: jwtRefreshToken,
       userId: userId.id,
@@ -71,15 +70,14 @@ class AuthenticationHandler {
     this._validator.authValidator.validatePutAuthPayload(payload);
 
     const {refreshToken} = payload;
-    const {
-      authService,
-      tokenManager: _tokenManager,
-    } = this._service;
 
-    await authService.verifyToken(refreshToken);
+    const [, token] = await Promise.all([
+      this._service.authService.verifyToken(refreshToken),
+      this._service.tokenManager.verifyRefreshToken(refreshToken),
+    ]);
 
-    const {id} = await _tokenManager.verifyRefreshToken(refreshToken);
-    const jwtAccessToken = await _tokenManager.generateAccessToken({id});
+    const jwtAccessToken =
+      await this._service.tokenManager.generateAccessToken(token);
 
     return h.response({
       status: 'success',
@@ -101,13 +99,11 @@ class AuthenticationHandler {
     this._validator.authValidator.validateDeleteAuthPayload(payload);
 
     const {refreshToken} = payload;
-    const {
-      authService,
-      tokenManager: _tokenManager,
-    } = this._service;
 
-    await _tokenManager.verifyRefreshToken(refreshToken);
-    await authService.deleteToken(refreshToken);
+    await Promise.all([
+      this._service.tokenManager.verifyRefreshToken(refreshToken),
+      this._service.authService.deleteToken(refreshToken),
+    ]);
 
     return h.response({
       status: 'success',

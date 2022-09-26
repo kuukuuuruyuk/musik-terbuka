@@ -27,11 +27,11 @@ class UserHandler {
 
     this._validator.userValidator.validateUserPayload(payload);
 
-    const userId = await this._service.userService.storeUser(payload);
-
     return h.response({
       status: 'success',
-      data: {userId},
+      data: {
+        userId: await this._service.userService.storeUser(payload),
+      },
     }).code(201);
   }
 }

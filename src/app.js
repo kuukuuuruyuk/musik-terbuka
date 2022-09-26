@@ -1,6 +1,9 @@
 const {Pool} = require('pg');
-const validationSchema = require('./validator/validator-shcema');
 const api = require('./api');
+const amqp = require('amqplib');
+const redis = require('redis');
+const AWS = require('aws-sdk');
+const path = require('path');
 // Service
 const {AlbumService} = require('./service/album-service');
 const {SongService} = require('./service/song-service');
@@ -9,6 +12,10 @@ const {PlaylistService} = require('./service/playlist-service');
 const {AuthenticationService} = require('./service/authentication-service');
 const {DBService} = require('./service/db-service');
 const {CollaborationService} = require('./service/collaboration-service');
+const {ProducerService} = require('./service/export/producer-service');
+const {UploadService} = require('./service/upload-service');
+const {CacheControlService} = require('./service/cache-control-service');
+const {AWSSimpleStorageService} = require('./service/aws-s3-service');
 // validator
 const {UserValidator} = require('./validator/user/user-validator');
 const {SongValidator} = require('./validator/song/song-validator');
@@ -21,12 +28,10 @@ const {TokenManager} = require('./tokenize/token-manager');
 const {TruncateValidator} = require('./validator/truncate/truncate-validator');
 const {CollaborationValidator} =
   require('./validator/collaboration/collaboration-validator');
-// Exceptions
-const {ClientError} = require('./exception/client-error');
-const {NotFoundError} = require('./exception/not-found-error');
-const {AuthorizationError} = require('./exception/authorization-error');
-const {AuthenticationError} = require('./exception/authentication-error');
-const {InvariantError} = require('./exception/invariant-error');
+const {ExportValidator} = require('./validator/export/export-validator');
+const {UploadValidator} = require('./validator/upload/upload-validator');
+const config = require('./utils/config');
+const validationSchema = require('./validator/validator-shcema');
 
 /**
  * App
@@ -41,19 +46,52 @@ async function appServer(server) {
     playlistApi,
     authenticationApi,
     collaborationApi,
+    errorPlugin,
+    uploadApi,
+    exportApi,
   } = api();
 
   // Database pool
   const pool = new Pool();
 
+  // Init redis
+  clientRedis = function() {
+    const _client = redis.createClient({
+      socket: {
+        host: config.redis.host,
+      },
+    });
+
+    _client.on('error', (error) => {
+      console.log(error);
+    });
+
+    _client.connect();
+
+    return _client;
+  };
+
+  // Redis cache control
+  const cacheControlService = new CacheControlService({client: clientRedis()});
+
+  // Upload service
+  const uploadService = new UploadService({
+    path: path.resolve(__dirname, process.env.UPLOADS_DIRECTORY),
+  });
+
   // Services
-  const albumService = new AlbumService(pool);
-  const songService = new SongService(pool);
+  const albumService = new AlbumService(pool, {
+    uploadService,
+    cacheControlService,
+  });
+  const songService = new SongService(pool, {cacheControlService});
   const userService = new UserService(pool);
-  const collaborationService = new CollaborationService(pool);
+  const collaborationService =
+    new CollaborationService(pool, {cacheControlService});
   const playlistService = new PlaylistService(pool, {
     songService,
     collaborationService,
+    cacheControlService,
   });
   const authService = new AuthenticationService(pool);
   const dbService = new DBService(pool);
@@ -67,70 +105,34 @@ async function appServer(server) {
   const truncateValidator = new TruncateValidator(validationSchema);
   const collaborationValidator =
     new CollaborationValidator(validationSchema);
+  const exportValidator = new ExportValidator(validationSchema);
+  const uploadValidator = new UploadValidator(validationSchema);
+
+  // RabbitMQ producer service
+  const amqConnection =
+    await amqp.connect(config.rabbitMq.server, function(error0, connection) {
+      if (error0) {
+        throw error0;
+      }
+
+      const queue = 'hello';
+      const msg = 'Hello world';
+
+      channel.assertQueue(queue, {
+        durable: false,
+      });
+
+      channel.sendToQueue(queue, Buffer.from(msg));
+      console.log(' [x] Sent %s', msg);
+    });
+  const producerService = new ProducerService({connection: amqConnection});
 
   // Token manager
   const tokenManager = new TokenManager();
 
-  /**
-   * On handle pre response
-   *
-   * @param {Request} request Request payload
-   * @param {any} h Hapi handler
-   * @return {any} Hapi response
-   */
-  function onPreResponseHandler(request, h) {
-    const {response: _response} = request;
-
-    if (_response instanceof Error) {
-      if (_response instanceof ClientError) {
-        return h.response({
-          status: 'fail',
-          message: _response.message,
-        }).code(_response.statusCode);
-      }
-
-      if (_response instanceof NotFoundError) {
-        return h.response({
-          status: 'error',
-          message: _response.message,
-        }).code(404);
-      }
-
-      if (_response instanceof AuthorizationError) {
-        return h.response({
-          status: 'error',
-          message: _response.message,
-        }).code(403);
-      }
-
-      if (_response instanceof AuthenticationError) {
-        return h.response({
-          status: 'error',
-          message: _response.message,
-        }).code(401);
-      }
-
-      if (_response instanceof InvariantError) {
-        const {statusCode} = _response.output;
-
-        return h.response({
-          status: 'error',
-          message: _response.message,
-        }).code(statusCode);
-      }
-
-      if (!_response.isServer) {
-        return h.continue;
-      }
-
-      return h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server.',
-      }).code(500);
-    }
-
-    return h.continue || _response;
-  }
+  // s3 service
+  const s3Service = new AWS.S3();
+  const awsService = new AWSSimpleStorageService({s3: s3Service});
 
   // Routes
   server.route([
@@ -216,9 +218,25 @@ async function appServer(server) {
         validator: {collaborationValidator},
       },
     },
+    {
+      plugin: uploadApi,
+      options: {
+        service: {uploadService, awsService},
+        validator: {uploadValidator},
+      },
+    },
+    {
+      plugin: exportApi,
+      options: {
+        service: {
+          playlistService,
+          exportService: producerService,
+        },
+        validator: {exportValidator},
+      },
+    },
+    {plugin: errorPlugin},
   ]);
-
-  server.ext('onPreResponse', onPreResponseHandler);
 }
 
 module.exports = {appServer};

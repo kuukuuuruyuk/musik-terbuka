@@ -8,26 +8,22 @@ const {NotFoundError} = require('../exception/not-found-error');
 class SongService {
   /**
    * Method konstruktor album servis
-   * @param {any} db db connection pool
+   * @param {any} db Database connection pool
+   * @param {any} service Song service
    */
-  constructor(db) {
+  constructor(db, service) {
     this._db = db;
+    this._service = service;
   }
 
   /**
    * Create song
    *
-   * @param {any} param0 Song params
+   * @param {any} payload Request payload
    * @return {any} Song model
    */
-  async storeSong({
-    title,
-    year,
-    performer,
-    genre,
-    duration,
-    albumId,
-  }) {
+  async storeSong(payload) {
+    const {title, year, performer, genre, duration, albumId} = payload;
     const songId = nanoid(16);
     const queryText = `
     INSERT INTO songs(id,
@@ -40,7 +36,7 @@ class SongService {
     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id
     `;
-    const queryValues = [
+    const result = await this._db.query(queryText, [
       songId,
       title,
       year,
@@ -48,10 +44,11 @@ class SongService {
       genre,
       duration,
       albumId,
-    ];
-    const result = await this._db.query(queryText, queryValues);
+    ]);
 
     if (!result.rows[0].id) throw new InvariantError('Failed to add music!');
+
+    await this._service.cacheControlService.del('songs');
 
     return result.rows[0].id;
   }
@@ -59,10 +56,11 @@ class SongService {
   /**
    * Store song
    *
-   * @param {any} param0 Song params
+   * @param {any} title Song title
+   * @param {any} performer Song performer
    * @return {any} Song data
    */
-  async getSongs({title, performer}) {
+  async _getSongs(title='', performer='') {
     const querySql = new Set([
       `SELECT id, title, performer`,
       `FROM songs`,
@@ -105,14 +103,31 @@ class SongService {
 
     const queryText = itemQuery.join(' ');
     const result = await this._db.query(queryText);
+    const songs = result.rows;
 
-    const songs = result.rows.map((item) => ({
-      id: item.id,
-      title: item.title,
-      performer: item.performer,
-    }));
+    await this._service.cacheControlService.set(
+        'songs',
+        JSON.stringify(songs),
+        (60 * 30),
+    );
 
     return songs;
+  }
+
+  /**
+   * Store song
+   *
+   * @param {any} payload Request payload
+   * @return {any} Song data
+   */
+  async getSongs(payload) {
+    try {
+      const songs = await this._service.cacheControlService.get('songs');
+      return JSON.parse(songs);
+    } catch (_error) {
+      const {title, performer} = payload;
+      return await this._getSongs(title, performer);
+    }
   }
 
   /**
@@ -146,9 +161,11 @@ class SongService {
       genre: item.genre,
       duration: item.duration,
       albumId: item.album_id,
-    }))[0];
+    }));
 
-    return song;
+    await this._service.cacheControlService.del('songs');
+
+    return song[0];
   }
 
   /**
@@ -165,32 +182,25 @@ class SongService {
     FROM songs
     WHERE album_id = $1
     `;
-    const queryValues = [albumId];
-    const result = await this._db.query(queryText, queryValues);
 
-    const songs = result.rows.map((item) => ({
-      id: item.id,
-      title: item.title,
-      performer: item.performer,
-    }));
+    const songs = await this._db.query(queryText, [albumId]);
 
-    return songs;
+    await this._service.cacheControlService.set(
+        `song:inAlbum:${albumId}`,
+        JSON.stringify(songs.rows),
+    );
+
+
+    return songs.rows;
   }
 
   /**
    * Edit song by id
    *
-   * @param {string} id Song id
-   * @param {any} param1 Song params
+   * @param {string} songId Song id
+   * @param {any} payload Request payload
    */
-  async updateSongById(id, {
-    title,
-    year,
-    performer,
-    genre,
-    duration,
-    albumId,
-  }) {
+  async updateSongById(songId, payload) {
     const queryText = `
     UPDATE songs
     SET title = $1,
@@ -202,41 +212,50 @@ class SongService {
     WHERE id = $7
     RETURNING id
     `;
-    const queryValues = [title, year, performer, genre, duration, albumId, id];
-    const result = await this._db.query(queryText, queryValues);
+    const song = await this._db.query(queryText, [
+      title = payload.title,
+      year = payload.year,
+      performer = payload.performer,
+      genre = payload.genre,
+      duration = payload.duration,
+      albumId = payload.albumId,
+      songId,
+    ]);
 
-    if (!result.rowCount) {
+    if (!song.rowCount) {
       throw new NotFoundError('Failed to update music, ID not found!');
     }
+
+    await this._service.cacheControlService.del('songs');
   }
 
   /**
    * Delete song by id
    *
-   * @param {string} id Song id
+   * @param {string} songId Song id
    */
-  async deleteSongById(id) {
+  async deleteSongById(songId) {
     const queryText = 'DELETE FROM songs WHERE id = $1 RETURNING id';
-    const queryValues = [id];
-    const result = await this._db.query(queryText, queryValues);
+    const songs = await this._db.query(queryText, [songId]);
 
-    if (!result.rowCount) {
+    if (!songs.rowCount) {
       throw new NotFoundError('Failed to delete a music, ID not found!');
     }
+
+    await this._service.cacheControlService.del('songs');
   }
 
   /**
    * Check kebenaran song di tabel
    *
-   * @param {string} id Song id
+   * @param {string} songId Song id
    */
-  async verifyExistingSongById(id) {
+  async verifyExistingSongById(songId) {
     const queryText = 'SELECT id FROM songs WHERE id = $1';
-    const queryValues = [id];
 
-    const result = await this._db.query(queryText, queryValues);
+    const songs = await this._db.query(queryText, [songId]);
 
-    if (!result.rowCount) {
+    if (!songs.rowCount) {
       throw new NotFoundError('Not found music ID!');
     }
   }

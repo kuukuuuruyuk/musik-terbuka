@@ -39,6 +39,21 @@ class AlbumRoute {
         path: '/albums/{id}',
         handler: h.deleteAlbumByIdHandler,
       },
+      {
+        path: '/albums/{id}/covers',
+        method: 'POST',
+        handler: h.postAlbumCover,
+      },
+      {
+        path: '/albums/{id}/likes',
+        method: 'POST',
+        handler: h.postAlbumLikes,
+      },
+      {
+        path: '/albums/{id}/likes',
+        method: 'GET',
+        handler: h.showAlbumLikes,
+      },
     ];
   }
 }

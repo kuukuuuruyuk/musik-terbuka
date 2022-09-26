@@ -3,24 +3,28 @@ require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
 const hapiAuthJwt = require('@hapi/jwt');
+const inert = require('@hapi/inert');
 const {appServer} = require('./app');
 const {JWT_APP_KEY} = require('./utils/key-token');
-
+const config = require('./utils/config');
 /**
  * Method for handle starting the app
  */
-async function bootstrap() {
+async function initServer() {
   // Init config hapi server
   const _server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.HOST,
+    port: config.app.port,
+    host: config.app.host,
     routes: {
       cors: {origin: ['*']},
     },
   });
 
   // Regis eksternal plugin
-  await _server.register([{plugin: hapiAuthJwt}]);
+  await _server.register([
+    {plugin: hapiAuthJwt},
+    {plugin: inert},
+  ]);
 
   // Mendefinisikan strategy autentikasi jwt
   _server.auth.strategy(JWT_APP_KEY, 'jwt', {
@@ -47,9 +51,9 @@ async function bootstrap() {
 
   // Show info server on app run
   console.log({
-    i: `Server berjalan pada ${_server.info.uri} on ${process.env.NODE_ENV}`,
+    i: `Server berjalan pada ${_server.info.uri}`,
   });
 }
 
 // Starting app
-bootstrap();
+initServer();

@@ -1,3 +1,4 @@
+const {exportSongPayloadSchema} = require('./export/export-schema');
 const {albumPayloadSchema} = require('./album/album-schema');
 const {
   putAuthPayloadSchema,
@@ -16,6 +17,7 @@ const {
 const {songPayloadSchema} = require('./song/song-schema');
 const {truncatePayloadSchema} = require('./truncate/truncate-schema');
 const {userPayloadSchema} = require('./user/user-schema');
+const {uploadHeaderSchema} = require('./upload/upload-schema');
 
 const validatorSchema = {
   userPayloadSchema,
@@ -30,6 +32,8 @@ const validatorSchema = {
   deleteCollaborationSchema,
   truncatePayloadSchema,
   deleteSongFromPlaylistSchema,
+  exportSongPayloadSchema,
+  uploadHeaderSchema,
 };
 
 module.exports = validatorSchema;
