@@ -64,19 +64,24 @@ class CollaborationHandler {
 
     this._validator.collaborationValidator.validateDeleteCollaboration(payload);
 
-    const {id: credentialId} = auth.credentials;
+    const credentialId = auth.credentials?.id;
     const {playlistId, userId} = payload;
-    const {playlistService, collaborationService} = this._service;
 
-    await playlistService.verifyPlaylistOwner(playlistId, credentialId);
-    await collaborationService.deleteCollaboration(playlistId, userId);
+    await Promise.all([
+      this._service.playlistService.verifyPlaylistOwner(
+          playlistId,
+          credentialId,
+      ),
+      this._service.collaborationService.deleteCollaboration(
+          playlistId,
+          userId,
+      ),
+    ]);
 
-    const _response = h.response({
+    return h.response({
       status: 'success',
       message: 'Kolaborasi berhasil dihapus',
     });
-
-    return _response;
   }
 }
 

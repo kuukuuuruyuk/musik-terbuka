@@ -52,14 +52,15 @@ class AlbumHandler {
       albumService,
       songService,
     } = this._service;
-    const album = await albumService.getAlbumById(albumId);
-    const songs = await songService.getSongsByAlbumId(albumId);
+
+    const [album, songs] = await Promise.all([
+      albumService.getAlbumById(albumId),
+      songService.getSongsByAlbumId(albumId),
+    ]);
 
     return h.response({
       status: 'success',
-      data: {
-        album: {...album, songs},
-      },
+      data: {album: {...album, songs}},
     });
   }
 
@@ -75,7 +76,7 @@ class AlbumHandler {
 
     this._validator.albumValidator.validateAlbumPayload(payload);
 
-    const {id: albumId} = params;
+    const albumId = params?.id;
     await this._service.albumService.updateAlbumById(albumId, payload);
 
     return h.response({

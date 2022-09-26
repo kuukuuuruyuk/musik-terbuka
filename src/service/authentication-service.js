@@ -17,7 +17,7 @@ class AuthenticationService {
   /**
    * Create access token
    *
-   * @param {any} param0 Store token param
+   * @param {any} param0 Token param
    */
   async storeToken({userId, accessToken, refershToken}) {
     const authId = nanoid(16);
@@ -28,8 +28,13 @@ class AuthenticationService {
       user_id
     ) VALUES ($1, $2, $3, $4)
     `;
-    const queryValues = [authId, accessToken, refershToken, userId];
-    await this._db.query(queryText, queryValues);
+
+    await this._db.query(queryText, [
+      authId,
+      accessToken,
+      refershToken,
+      userId,
+    ]);
   }
 
   /**
@@ -46,10 +51,10 @@ class AuthenticationService {
     FROM authentications
     WHERE access_token = $1
     `;
-    const queryValues = [accessToken];
-    const result = await this._db.query(queryText, queryValues);
 
-    if (!result.rowCount) {
+    const authentication = await this._db.query(queryText, [accessToken]);
+
+    if (!authentication.rowCount) {
       throw new InvariantError('Refresh token tidak valid...');
     }
   }
@@ -60,10 +65,10 @@ class AuthenticationService {
    * @param {string} accessToken Access token
    */
   async deleteToken(accessToken) {
-    const queryText = 'DELETE FROM authentications WHERE access_token = $1';
-    const queryValues = [accessToken];
+    const queryText =
+      'DELETE FROM authentications WHERE access_token = $1';
 
-    await this._db.query(queryText, queryValues);
+    await this._db.query(queryText, [accessToken]);
   }
 }
 

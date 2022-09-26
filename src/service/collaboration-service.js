@@ -9,9 +9,11 @@ class CollaborationService {
    * Collaboration service
    *
    * @param {Pool} db Database connection
+   * @param {any} service Collaboration service
    */
-  constructor(db) {
+  constructor(db, service) {
     this._db = db;
+    this._service = service;
   }
 
   /**
@@ -30,14 +32,20 @@ class CollaborationService {
     ) VALUES ($1, $2, $3)
     RETURNING id
     `;
-    const queryValues = [collabId, playlistId, userId];
-    const result = await this._db.query(queryText, queryValues);
 
-    if (!result.rowCount) {
+    const collaborations = await this._db.query(queryText, [
+      collabId,
+      playlistId,
+      userId,
+    ]);
+
+    if (!collaborations.rowCount) {
       throw new InvariantError('Gagal menambahkan kolaborasi');
     }
 
-    return result.rows[0].id;
+    await this._service.cacheControlService.del(`playlists`);
+
+    return collaborations.rows[0].id;
   }
 
   /**
@@ -51,12 +59,15 @@ class CollaborationService {
     DELETE FROM collaborations
     WHERE playlist_id = $1 AND user_id = $2
     `;
-    const queryValues = [playlistId, userId];
-    const result = await this._db.query(queryText, queryValues);
 
-    if (!result.rowCount) {
+    const collaborations =
+      await this._db.query(queryText, [playlistId, userId]);
+
+    if (!collaborations.rowCount) {
       throw new InvariantError('Gagal menghapus kolaborasi');
     }
+
+    await this._service.cacheControlService.del(`playlists`);
   }
 
   /**
@@ -73,10 +84,11 @@ class CollaborationService {
     FROM collaborations
     WHERE playlist_id = $1 AND user_id = $2
     `;
-    const queryValues = [playlistId, userId];
-    const result = await this._db.query(queryText, queryValues);
 
-    if (!result.rowCount) {
+    const collaborations =
+      await this._db.query(queryText, [playlistId, userId]);
+
+    if (!collaborations.rowCount) {
       throw new InvariantError('Gagal memverifikasi kolaborasi');
     }
   }
