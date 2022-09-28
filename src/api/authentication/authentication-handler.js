@@ -64,7 +64,7 @@ class AuthenticationHandler {
   async putAuthenticationHandler(request, h) {
     this._validator.authValidator.validatePutAuthPayload(request.payload);
 
-    const {refreshToken} = request.payload;
+    const refreshToken = request.payload?.refreshToken;
     const [, token] = await Promise.all([
       this._service.authService.verifyToken(refreshToken),
       this._service.tokenManager.verifyRefreshToken(refreshToken),
@@ -89,7 +89,7 @@ class AuthenticationHandler {
   async deleteAuthenticationHandler(request, h) {
     this._validator.authValidator.validateDeleteAuthPayload(request.payload);
 
-    const {refreshToken} = request.payload;
+    const refreshToken = request.payload?.refreshToken;
 
     await Promise.all([
       this._service.tokenManager.verifyRefreshToken(refreshToken),

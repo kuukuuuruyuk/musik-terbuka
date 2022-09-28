@@ -21,12 +21,12 @@ class AuthenticationService {
    */
   async storeToken({userId, accessToken, refershToken}) {
     const authId = nanoid(16);
-    const querySql = [
+    const sql = [
       'INSERT INTO authentications(id, access_token, refresh_token, user_id)',
       'VALUES ($1, $2, $3, $4)',
     ].join(' ');
 
-    await this._db.query(querySql, [
+    await this._db.query(sql, [
       authId,
       accessToken,
       refershToken,
@@ -40,12 +40,12 @@ class AuthenticationService {
    * @param {string} accessToken Access token string
    */
   async verifyToken(accessToken) {
-    const querySql = [
+    const sql = [
       'SELECT id, access_token, refresh_token, user_id',
       'FROM authentications',
       'WHERE access_token = $1',
     ].join(' ');
-    const auth = await this._db.query(querySql, [accessToken]);
+    const auth = await this._db.query(sql, [accessToken]);
 
     if (!auth.rowCount) {
       throw new InvariantError('Refresh token tidak valid...');
@@ -58,9 +58,9 @@ class AuthenticationService {
    * @param {string} accessToken Access token
    */
   async deleteToken(accessToken) {
-    const querySql = 'DELETE FROM authentications WHERE access_token = $1';
+    const sql = 'DELETE FROM authentications WHERE access_token = $1';
 
-    await this._db.query(querySql, [accessToken]);
+    await this._db.query(sql, [accessToken]);
   }
 }
 
