@@ -4,8 +4,7 @@ require('dotenv').config();
 const Hapi = require('@hapi/hapi');
 const hapiAuthJwt = require('@hapi/jwt');
 const inert = require('@hapi/inert');
-const {appServer} = require('./app');
-const {JWT_APP_KEY} = require('./utils/key-token');
+const {appServer, JWT_APP_KEY} = require('./app');
 const config = require('./utils/config');
 /**
  * Method for handle starting the app

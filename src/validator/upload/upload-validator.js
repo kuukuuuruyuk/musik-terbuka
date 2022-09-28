@@ -18,10 +18,10 @@ class UploadValidator {
    * @param {any} header Header request
    */
   validateUploadHeaderSchema(header) {
-    const validationResult = this._schema.uploadHeaderSchema.validate(header);
+    const validation = this._schema.uploadHeaderSchema.validate(header);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

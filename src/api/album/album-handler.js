@@ -30,8 +30,10 @@ class AlbumHandler {
 
     this._validator.albumValidator.validateAlbumPayload(payload);
 
-    const {name, year} = payload;
-    const albumId = await this._service.albumService.storeAlbum({name, year});
+    const albumId = await this._service.albumService.storeAlbum({
+      name: payload.name,
+      year: payload.year,
+    });
 
     return h.response({
       status: 'success',
@@ -48,14 +50,10 @@ class AlbumHandler {
    */
   async getAlbumByIdHandler(request, h) {
     const {id: albumId} = request.params;
-    const {
-      albumService,
-      songService,
-    } = this._service;
 
     const [album, songs] = await Promise.all([
-      albumService.getAlbumById(albumId),
-      songService.getSongsByAlbumId(albumId),
+      this._service.albumService.getAlbumById(albumId),
+      this._service.songService.getSongsByAlbumId(albumId),
     ]);
 
     return h.response({
@@ -72,11 +70,10 @@ class AlbumHandler {
    * @return {any} Album data
    */
   async putAlbumByIdHandler(request, h) {
-    const {params, payload} = request;
-
+    const {payload} = request;
     this._validator.albumValidator.validateAlbumPayload(payload);
 
-    const albumId = params?.id;
+    const albumId = request.params?.id;
     await this._service.albumService.updateAlbumById(albumId, payload);
 
     return h.response({

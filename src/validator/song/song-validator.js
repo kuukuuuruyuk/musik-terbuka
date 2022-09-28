@@ -19,11 +19,10 @@ class SongValidator {
    * @param {any} payload Request payload
    */
   validateSongPayload(payload) {
-    const {songPayloadSchema} = this._schema;
-    const validationResult = songPayloadSchema.validate(payload);
+    const validation = this._schema.songPayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

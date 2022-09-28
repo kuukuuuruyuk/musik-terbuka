@@ -19,11 +19,10 @@ class UserValidator {
    * @param {any} payload Request payload
    */
   validateUserPayload(payload) {
-    const {userPayloadSchema} = this._schema;
-    const validationResult = userPayloadSchema.validate(payload);
+    const validation = this._schema.userPayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

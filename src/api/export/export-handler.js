@@ -19,7 +19,7 @@ class ExportSongsHandler {
    * Cerate export
    *
    * @param {Request} request Request payload
-   * @param {*} h Hapi handler
+   * @param {any} h Hapi handler
    * @return {any} Export data
    */
   async postExportSongsHandler(request, h) {
@@ -27,19 +27,14 @@ class ExportSongsHandler {
 
     const {params, auth} = request;
     const playlistId = params?.playlistId;
+    const {playlistsService, exportService} = this._service;
 
     await Promise.all([
-      this._service.playlistsService.verifyPlaylistAccess(
-          playlistId,
-          auth.credentials?.id,
-      ),
-      this._service.exportService.sendMessage(
-          'export:playlists',
-          JSON.stringify({
-            playlistId,
-            targetEmail: payload.targetEmail,
-          }),
-      ),
+      playlistsService.verifyPlaylistAccess(playlistId, auth.credentials?.id),
+      exportService.sendMessage('export:playlists', JSON.stringify({
+        playlistId,
+        targetEmail: payload.targetEmail,
+      })),
     ]);
 
     return h.response({

@@ -25,14 +25,12 @@ class AuthenticationHandler {
    * @param {any} h Hapi handler
    */
   async postAuthenticationHandler(request, h) {
-    const {payload} = request;
+    const authValidator = this._validator.authValidator;
+    authValidator.validatePostAuthPayload(request.payload);
 
-    this._validator.authValidator.validatePostAuthPayload(payload);
-
-    const token = await this._service.userService.userCrendential(
-        payload.username,
-        payload.password,
-    );
+    const {username, password} = payload;
+    const token =
+      await this._service.userService.userCrendential(username, password);
 
     const userId = {id: token?.id};
 

@@ -19,11 +19,10 @@ class TruncateValidator {
    * @param {any} payload Request payload
    */
   validatePayload(payload) {
-    const {truncatePayloadSchema} = this._schema;
-    const validationResult = truncatePayloadSchema.validate(payload);
+    const validation = this._schema.truncatePayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

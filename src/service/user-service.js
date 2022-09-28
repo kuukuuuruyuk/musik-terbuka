@@ -32,7 +32,7 @@ class UserService {
     const userId = nanoid(16);
     const hashedPassword = await bcrypt.hash(password, 10);
     const queryText = `
-    INSERT INTO users (id,
+    INSERT INTO users(id,
       username,
       password,
       fullname
@@ -78,10 +78,9 @@ class UserService {
    */
   async verifyExistingUserWithUserId(userId) {
     const queryText = 'SELECT id FROM users WHERE id = $1';
+    const users = await this._db.query(queryText, [userId]);
 
-    const result = await this._db.query(queryText, [userId]);
-
-    if (!result.rowCount) {
+    if (!users.rowCount) {
       throw new NotFoundError('Not found music ID!');
     }
   }

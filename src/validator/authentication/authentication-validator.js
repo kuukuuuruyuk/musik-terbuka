@@ -19,11 +19,10 @@ class AuthenticationValidator {
    * @param {any} payload Request payload
    */
   validatePostAuthPayload(payload) {
-    const {postAuthPayloadSchema} = this._schema;
-    const validationResult = postAuthPayloadSchema.validate(payload);
+    const validator = this._schema.postAuthPayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validator.error) {
+      throw new InvariantError(validator.error.message);
     }
   }
 
@@ -33,11 +32,10 @@ class AuthenticationValidator {
    * @param {any} payload Request payload
    */
   validatePutAuthPayload(payload) {
-    const {putAuthPayloadSchema} = this._schema;
-    const validationResult = putAuthPayloadSchema.validate(payload);
+    const validation = this._schema.postAuthPayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 
@@ -47,11 +45,10 @@ class AuthenticationValidator {
    * @param {any} payload Request payload
    */
   validateDeleteAuthPayload(payload) {
-    const {deleteAuthPayloadSchema} = this._schema;
-    const validationResult = deleteAuthPayloadSchema.validate(payload);
+    const validation = this._postAuthPayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

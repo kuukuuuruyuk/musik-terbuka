@@ -36,7 +36,8 @@ class SongService {
     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id
     `;
-    const result = await this._db.query(queryText, [
+
+    const songs = await this._db.query(queryText, [
       songId,
       title,
       year,
@@ -46,11 +47,11 @@ class SongService {
       albumId,
     ]);
 
-    if (!result.rows[0].id) throw new InvariantError('Failed to add music!');
+    if (!songs.rows[0].id) throw new InvariantError('Failed to add music!');
 
     await this._service.cacheControlService.del('songs');
 
-    return result.rows[0].id;
+    return songs.rows[0].id;
   }
 
   /**
@@ -102,8 +103,7 @@ class SongService {
     }
 
     const queryText = itemQuery.join(' ');
-    const result = await this._db.query(queryText);
-    const songs = result.rows;
+    const songs = await this._db.query(queryText);
 
     await this._service.cacheControlService.set(
         'songs',
@@ -148,12 +148,11 @@ class SongService {
     FROM songs
     WHERE id = $1
     `;
-    const queryValues = [id];
-    const result = await this._db.query(queryText, queryValues);
+    const songs = await this._db.query(queryText, [id]);
 
-    if (!result.rowCount) throw new NotFoundError('Not found music ID!');
+    if (!songs.rowCount) throw new NotFoundError('Not found music ID!');
 
-    const song = result.rows.map((item) => ({
+    const song = songs.rows.map((item) => ({
       id: item.id,
       title: item.title,
       year: item.year,
@@ -161,11 +160,11 @@ class SongService {
       genre: item.genre,
       duration: item.duration,
       albumId: item.album_id,
-    }));
+    }))[0];
 
     await this._service.cacheControlService.del('songs');
 
-    return song[0];
+    return song;
   }
 
   /**
@@ -201,6 +200,7 @@ class SongService {
    * @param {any} payload Request payload
    */
   async updateSongById(songId, payload) {
+    const {title, year, performer, genre, duration, albumId} = payload;
     const queryText = `
     UPDATE songs
     SET title = $1,
@@ -212,17 +212,17 @@ class SongService {
     WHERE id = $7
     RETURNING id
     `;
-    const song = await this._db.query(queryText, [
-      title = payload.title,
-      year = payload.year,
-      performer = payload.performer,
-      genre = payload.genre,
-      duration = payload.duration,
-      albumId = payload.albumId,
+    const songs = await this._db.query(queryText, [
+      title,
+      year,
+      performer,
+      genre,
+      duration,
+      albumId,
       songId,
     ]);
 
-    if (!song.rowCount) {
+    if (!songs.rowCount) {
       throw new NotFoundError('Failed to update music, ID not found!');
     }
 
