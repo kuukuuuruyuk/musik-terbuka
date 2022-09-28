@@ -23,14 +23,12 @@ class UserHandler {
    * @return {any} User data
    */
   async postUserHandler(request, h) {
-    const {payload} = request;
-
-    this._validator.userValidator.validateUserPayload(payload);
+    this._validator.userValidator.validateUserPayload(request.payload);
 
     return h.response({
       status: 'success',
       data: {
-        userId: await this._service.userService.storeUser(payload),
+        userId: await this._service.userService.storeUser(request.payload),
       },
     }).code(201);
   }

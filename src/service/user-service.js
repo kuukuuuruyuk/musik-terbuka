@@ -19,36 +19,28 @@ class UserService {
   /**
    * Create user
    *
-   * @param {any} param0 User params
+   * @param {any} payload User model
    * @return {string} User id
    */
-  async storeUser({
-    username,
-    password,
-    fullname,
-  }) {
+  async storeUser(payload) {
+    const {username, password, fullname} = payload;
+
     await this._isUserExist(username);
 
     const userId = nanoid(16);
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const queryText = `
-    INSERT INTO users(id,
-      username,
-      password,
-      fullname
-    ) VALUES($1, $2, $3, $4)
-    RETURNING id
-    `;
-    const users = await this._db.query(queryText, [
-      userId,
-      username,
-      hashedPassword,
-      fullname,
-    ]);
+    const hashPass = await bcrypt.hash(password, 10);
+    const sql = [
+      'INSERT INTO',
+      'users(id, username, password, fullname)',
+      'VALUES($1, $2, $3, $4)',
+      'RETURNING id',
+    ].join(' ');
+    const user =
+      await this._db.query(sql, [userId, username, hashPass, fullname]);
 
-    if (!users.rows.length) throw new InvariantError('User gagal ditambahkan');
+    if (!user.rows.length) throw new InvariantError('User gagal ditambahkan');
 
-    return users.rows[0].id;
+    return user.rows[0]?.id;
   }
 
   /**
@@ -57,17 +49,16 @@ class UserService {
    * @param {string} username Username
    */
   async _isUserExist(username) {
-    const queryText = `
-    SELECT username
-    FROM users
-    WHERE username = $1
-    `;
+    const sql = [
+      'SELECT username',
+      'FROM users',
+      'WHERE username = $1',
+    ].join(' ');
+    const user = await this._db.query(sql, [username]);
 
-    const users = await this._db.query(queryText, [username]);
-
-    if (users.rows.length > 0) {
-      const _message = 'Gagal menambahkan User baru, Username sudah ada';
-      throw new InvariantError(_message);
+    if (user.rows.length > 0) {
+      const msg = 'Gagal menambahkan User baru, Username sudah ada';
+      throw new InvariantError(msg);
     }
   }
 
@@ -77,10 +68,10 @@ class UserService {
    * @param {string} userId User id
    */
   async verifyExistingUserWithUserId(userId) {
-    const queryText = 'SELECT id FROM users WHERE id = $1';
-    const users = await this._db.query(queryText, [userId]);
+    const sql = 'SELECT id FROM users WHERE id = $1';
+    const user = await this._db.query(sql, [userId]);
 
-    if (!users.rowCount) {
+    if (!user.rowCount) {
       throw new NotFoundError('Not found music ID!');
     }
   }
@@ -93,14 +84,14 @@ class UserService {
    * @return {string} User id
    */
   async userCrendential(username, password) {
-    const queryText = 'SELECT id, password FROM users WHERE username = $1';
-    const users = await this._db.query(queryText, [username]);
+    const sql = 'SELECT id, password FROM users WHERE username = $1';
+    const user = await this._db.query(sql, [username]);
 
-    if (!users.rowCount) {
+    if (!user.rowCount) {
       throw new AuthenticationError('Username yang anda berikan salah...');
     }
 
-    const {id: userId, password: hashedPassword} = users.rows[0];
+    const {id: userId, password: hashedPassword} = user.rows[0];
     const match = await bcrypt.compare(password, hashedPassword);
 
     if (!match) {

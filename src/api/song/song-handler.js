@@ -27,11 +27,11 @@ class SongHandler {
    * @return {any} Song data
    */
   async postSongHandler(request, h) {
-    const {payload} = request;
-
-    await this._validator.songValidator.validateSongPayload(payload);
-
-    const songId = await this._service.songService.storeSong(payload);
+    const payload = request.payload;
+    const [, songId] = await Promise.all([
+      this._validator.songValidator.validateSongPayload(payload),
+      this._service.songService.storeSong(payload),
+    ]);
 
     return h.response({
       status: 'success',
@@ -49,10 +49,7 @@ class SongHandler {
    */
   async getSongsHandler(request, h) {
     const {title, performer} = request.query;
-    const songs = await this._service.songService.getSongs({
-      title,
-      performer,
-    });
+    const songs = await this._service.songService.getSongs({title, performer});
 
     return h.response({
       status: 'success',
@@ -68,7 +65,7 @@ class SongHandler {
    * @return {any} Song data
    */
   async getSongByIdHandler(request, h) {
-    const {id: songId} = request.params;
+    const songId = request.params?.id;
 
     return h.response({
       status: 'success',
@@ -90,6 +87,7 @@ class SongHandler {
 
     const {payload, params} = request;
     const songId = params?.id;
+
     await this._service.songService.updateSongById(songId, payload);
 
     return h.response({

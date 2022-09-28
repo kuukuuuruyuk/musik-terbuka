@@ -25,27 +25,21 @@ class CollaborationService {
    */
   async storeCollaboration(playlistId, userId) {
     const collabId = nanoid(16);
-    const queryText = `
-    INSERT INTO collaborations(id,
-      playlist_id,
-      user_id
-    ) VALUES ($1, $2, $3)
-    RETURNING id
-    `;
+    const querySql = [
+      'INSERT INTO collaborations(id, playlist_id, user_id)',
+      'VALUES ($1, $2, $3)',
+      'RETURNING id',
+    ].join(' ');
+    const collabs =
+      await this._db.query(querySql, [collabId, playlistId, userId]);
 
-    const collaborations = await this._db.query(queryText, [
-      collabId,
-      playlistId,
-      userId,
-    ]);
-
-    if (!collaborations.rowCount) {
+    if (!collabs.rowCount) {
       throw new InvariantError('Gagal menambahkan kolaborasi');
     }
 
     await this._service.cacheControlService.del(`playlists`);
 
-    return collaborations.rows[0].id;
+    return collabs.rows[0].id;
   }
 
   /**
@@ -55,15 +49,12 @@ class CollaborationService {
    * @param {string} userId User id
    */
   async deleteCollaboration(playlistId, userId) {
-    const queryText = `
-    DELETE FROM collaborations
-    WHERE playlist_id = $1 AND user_id = $2
-    `;
-
-    const collaborations =
+    const queryText =
+      'DELETE FROM collaborations WHERE playlist_id = $1 AND user_id = $2';
+    const collabs =
       await this._db.query(queryText, [playlistId, userId]);
 
-    if (!collaborations.rowCount) {
+    if (!collabs.rowCount) {
       throw new InvariantError('Gagal menghapus kolaborasi');
     }
 
@@ -77,18 +68,15 @@ class CollaborationService {
    * @param {string} userId User id
    */
   async verifyCollaborator(playlistId, userId) {
-    const queryText = `
-    SELECT id,
-      playlist_id,
-      user_id
-    FROM collaborations
-    WHERE playlist_id = $1 AND user_id = $2
-    `;
-
-    const collaborations =
+    const queryText = [
+      'SELECT id, playlist_id, user_id',
+      'FROM collaborations',
+      'WHERE playlist_id = $1 AND user_id = $2',
+    ].join(' ');
+    const collabs =
       await this._db.query(queryText, [playlistId, userId]);
 
-    if (!collaborations.rowCount) {
+    if (!collabs.rowCount) {
       throw new InvariantError('Gagal memverifikasi kolaborasi');
     }
   }

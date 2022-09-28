@@ -1,5 +1,4 @@
 const Joi = require('joi');
-
 const currentYear = new Date().getFullYear();
 
 const albumPayloadSchema = Joi.object({

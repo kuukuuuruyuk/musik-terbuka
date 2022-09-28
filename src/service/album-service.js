@@ -23,17 +23,11 @@ class AlbumService {
    * @param {string} name Album model
    * @param {number} year Album year
    */
-  async storeAlbum(name='', year=0) {
+  async storeAlbum(name = '', year = 0) {
     const albumId = nanoid(16);
-    const queryText = `
-    INSERT INTO albums(id,
-      name,
-      year
-    ) VALUES($1, $2, $3)
-    RETURNING id
-    `;
-
-    const album = await this._db.query(queryText, [albumId, name, year]);
+    const querySql =
+      'INSERT INTO albums(id, name, year) VALUES($1, $2, $3) RETURNING id';
+    const album = await this._db.query(querySql, [albumId, name, year]);
 
     if (album.rows[0].id) throw new InvariantError('Gagal menambahakan album');
 
@@ -45,18 +39,12 @@ class AlbumService {
   /**
    * Show album by id
    *
-   * @param {string} id Album id
+   * @param {string} albumId Album id
    * @return {any} Album
    */
-  async getAlbumById(id) {
-    const queryText = `
-    SELECT id,
-      name,
-      year
-    FROM albums
-    WHERE id = $1
-    `;
-    const result = await this._db.query(queryText, [id]);
+  async getAlbumById(albumId) {
+    const querySql = 'SELECT id, name, year FROM albums WHERE id = $1';
+    const result = await this._db.query(querySql, [albumId]);
 
     if (!result.rowCount) {
       throw new NotFoundError('Cannot find album ID!');
@@ -72,13 +60,8 @@ class AlbumService {
    * @param {any} param1 Album model
    */
   async updateAlbumById(albumId, {name, year}) {
-    const queryText = `
-    UPDATE albums
-    SET name = $1,
-      year = $2
-    WHERE id = $3
-    `;
-    const result = await this._db.query(queryText, [name, year, albumId]);
+    const querySql = 'UPDATE albums SET name = $1, year = $2 WHERE id = $3';
+    const result = await this._db.query(querySql, [name, year, albumId]);
 
     if (!result.rowCount) throw new NotFoundError('Cannot find album ID!');
 
@@ -88,12 +71,13 @@ class AlbumService {
   /**
    * Delete album by id
    *
-   * @param {string} albumId Album id
+   * @param {string} id Album id
    */
-  async deleteAlbumById(albumId) {
-    const album = await this.getAlbumById(albumId);
-    const queryText = 'DELETE FROM albums WHERE id = $1';
-    const hapusAlbum = await this._db.query(queryText, [album?.id]);
+  async deleteAlbumById(id) {
+    const album = await this.getAlbumById(id);
+    const albumId = album?.id;
+    const querySql = 'DELETE FROM albums WHERE id = $1';
+    const hapusAlbum = await this._db.query(querySql, [albumId]);
 
     if (!hapusAlbum.rowCount) {
       throw new NotFoundError('Cannot find album ID!');
@@ -115,13 +99,16 @@ class AlbumService {
   async findAllAlbum() {
     try {
       const albums = await this._service.cacheControlService.get('albums');
+
       return JSON.parse(albums);
     } catch (_error) {
       const albums = await this._db.query('SELECT * FROM albums');
+
       await this._service.cacheControlService.set(
           'albums',
           JSON.stringify(albums.rows),
       );
+
       return albums.rows;
     }
   }
@@ -133,16 +120,14 @@ class AlbumService {
    * @return {any} Album model
    */
   async getAlbumByIdWithSongs(albumId) {
-    const queryText = `
-    SELECT songs.id,
-      songs.title,
-      songs.performer
-    FROM albums
-    INNER JOIN songs ON songs.album_id = albums.id
-    WHERE albums.id = $1
-    `;
+    const querySql = [
+      'SELECT songs.id, songs.title, songs.performer',
+      'FROM albums',
+      'INNER JOIN songs ON songs.album_id = albums.id',
+      'WHERE albums.id = $1',
+    ].join(' ');
+    const albums = await this._db.query(querySql, [albumId]);
 
-    const albums = await this._db.query(queryText, [albumId]);
     return albums.rows;
   }
 
@@ -154,8 +139,8 @@ class AlbumService {
    */
   async editAlbumCoverById(albumId, filename) {
     const queryText = 'UPDATE albums SET cover = $1 WHERE id = $2';
-
     const album = await this._db.query(queryText, [filename, albumId]);
+
     if (!album.rowCount) {
       throw new NotFoundError('Cannot find album ID!');
     }
@@ -168,8 +153,8 @@ class AlbumService {
    */
   async _verifyExistAlbumById(albumId) {
     const queryText = 'SELECT id FROM albums WHERE id = $1';
-
     const album = await this._db.query(queryText, [albumId]);
+
     if (!album.rowCount) {
       throw new NotFoundError('Album ID not found!');
     }
@@ -187,8 +172,8 @@ class AlbumService {
 
     const queryText =
       'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2';
-
     const album = await this._db.query(queryText, [albumId, userId]);
+
     return album.rowCount;
   }
 
@@ -201,8 +186,8 @@ class AlbumService {
   async deleteAlbumLikeStatusById(albumId, userId) {
     const queryText =
       'DELETE FROM user_album_likes WHERE album_id = $1 AND user_id = $2';
-
     const album = await this._db.query(queryText, [albumId, userId]);
+
     if (!album.rowCount) {
       throw new NotFoundError('Cannot find album & user ID!');
     }
@@ -220,7 +205,6 @@ class AlbumService {
     const albumLikeId = nanoid(16);
     const queryText =
       'INSERT INTO user_album_likes VALUES ($1, $2, $3)';
-
     const albumLikes = await this._db.query(queryText, [
       albumLikeId,
       userId,
@@ -252,8 +236,8 @@ class AlbumService {
     } catch {
       const queryText =
         'SELECT user_id FROM user_album_likes WHERE album_id = $1';
-
       const albumLikes = await this._db.query(queryText, [albumId]);
+
       if (!albumLikes.rowCount) {
         throw new NotFoundError('Cannot find album ID!');
       }

@@ -26,11 +26,10 @@ class PlaylistService {
    */
   async storePlaylist(songName, owner) {
     const playlistId = nanoid(16);
-    const queryText =
+    const querySql =
       'INSERT INTO playlists VALUES ($1, $2, $3) RETURNING id';
-
     const playlists =
-      await this._db.query(queryText, [playlistId, songName, owner]);
+      await this._db.query(querySql, [playlistId, songName, owner]);
 
     if (!playlists.rows[0].id) {
       throw new InvariantError('Playlist gagal ditambahkan');
@@ -48,19 +47,16 @@ class PlaylistService {
    * @return {any} Playlist model
    */
   async getPlaylists(owner) {
-    const queryText = `
-      SELECT playlists.id,
-        playlists.name,
-        users.username
-      FROM playlists
-      LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
-      INNER JOIN users ON playlists.owner = users.id
-      WHERE playlists.owner = $1 OR collaborations.user_id = $1
-      GROUP BY playlists.id, users.id
-      LIMIT 2
-    `;
-
-    const playlists = await this._db.query(queryText, [owner]);
+    const querySql = [
+      'SELECT playlists.id, playlists.name, users.username',
+      'FROM playlists',
+      'LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id',
+      'INNER JOIN users ON playlists.owner = users.id',
+      'WHERE playlists.owner = $1 OR collaborations.user_id = $1',
+      'GROUP BY playlists.id, users.id',
+      'LIMIT 2',
+    ].join(' ');
+    const playlists = await this._db.query(querySql, [owner]);
 
     await this._service.cacheControlService.set(
         `playlists`,
@@ -78,16 +74,13 @@ class PlaylistService {
    * @return {any} Playlist model
    */
   async getPlaylistMappedById(playlistId) {
-    const queryText = `
-    SELECT playlists.id,
-      playlists.name,
-      users.username
-    FROM playlists
-    LEFT JOIN users ON users.id = playlists.owner
-    WHERE playlists.id = $1
-    `;
-
-    const playlists = await this._db.query(queryText, [playlistId]);
+    const querySql = [
+      'SELECT playlists.id, playlists.name, users.username',
+      'FROM playlists',
+      'LEFT JOIN users ON users.id = playlists.owner',
+      'WHERE playlists.id = $1',
+    ].join(' ');
+    const playlists = await this._db.query(querySql, [playlistId]);
 
     if (!playlists.rowCount) {
       throw new NotFoundError('Gagal menemukan playlist ID');
@@ -102,9 +95,8 @@ class PlaylistService {
    * @param {string} playlistId Playlist id
    */
   async deletePlaylistById(playlistId) {
-    const queryText = 'DELETE FROM playlists WHERE id = $1';
-
-    const result = await this._db.query(queryText, [playlistId]);
+    const querySql = 'DELETE FROM playlists WHERE id = $1';
+    const result = await this._db.query(querySql, [playlistId]);
 
     if (!result.rowCount) {
       throw new NotFoundError('Gagal menghapus playlist, Id tidak ditemukan');
@@ -123,14 +115,9 @@ class PlaylistService {
     await this._service.songService.verifyExistingSongById(songId);
 
     const plSongId = nanoid(16);
-    const queryText =
-      'INSERT INTO playlist_songs VALUES ($1, $2, $3)';
-
-    const playlistSongs = await this._db.query(queryText, [
-      plSongId,
-      playlistId,
-      songId,
-    ]);
+    const querySql = 'INSERT INTO playlist_songs VALUES ($1, $2, $3)';
+    const playlistSongs =
+      await this._db.query(querySql, [plSongId, playlistId, songId]);
 
     if (!playlistSongs.rowCount) {
       throw new InvariantError('Gagal menambahkan lagu ke playlist');
@@ -146,35 +133,35 @@ class PlaylistService {
    * @return {any} Playlist model
    */
   async getSongsInPlaylist(playlistId) {
+    const cacheControlService = this._service.cacheControlService;
     try {
-      const playlistSong = await this._service.cacheControlService.get(
-          `playlist:song:${playlistId}`,
-      );
-      return JSON.parse(playlistSong);
+      const playlist =
+        await cacheControlService.get(`playlist:song:${playlistId}`);
+
+      return JSON.parse(playlist);
     } catch (_error) {
-      const queryText = `
-      SELECT songs.id,
-        songs.title,
-        songs.performer
-      FROM songs
-      LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id
-      WHERE playlist_songs.playlist_id = $1
-      GROUP BY songs.id
-      `;
-      const playlistSongs = await this._db.query(queryText, [playlistId]);
+      const querySql = [
+        'SELECT songs.id, songs.title, songs.performer',
+        'FROM songs',
+        'LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id',
+        'WHERE playlist_songs.playlist_id = $1',
+        'GROUP BY songs.id',
+      ].join(' ');
+      const playlist = await this._db.query(querySql, [playlistId]);
 
-      await this._service.cacheControlService.set(
-          `playlist:songs:${playlistId}`,
-          JSON.stringify(playlistSongs.rows),
-          (60 * 30),
-      );
+      await Promise.all([
+        cacheControlService.set(
+            `playlist:songs:${playlistId}`,
+            JSON.stringify(playlist.rows),
+            (60 * 30),
+        ),
+        cacheControlService.set(
+            `playlist:song:${playlistId}`,
+            JSON.stringify(playlist.rows),
+        ),
+      ]);
 
-      await this._service.cacheControlService.set(
-          `playlist:song:${playlistId}`,
-          JSON.stringify(playlistSongs.rows),
-      );
-
-      return playlistSongs.rows;
+      return playlist.rows;
     }
   }
 
@@ -185,16 +172,15 @@ class PlaylistService {
    */
   async deleteSongFromPlaylistBySongId(songId) {
     const queryText = 'DELETE FROM playlist_songs WHERE song_id = $1';
+    const playlist = await this._db.query(queryText, [songId]);
 
-    const playlistSongs = await this._db.query(queryText, [songId]);
-
-    if (!playlistSongs.rowCount) {
+    if (!playlist.rowCount) {
       const message =
         'Gagal menghapus lagu dari playlist. Id song tidak ditemukan';
       throw new InvariantError(message);
     }
 
-    await this._service.cacheControlService.del(`playlist:songs:${playlistId}`);
+    await this._service.cacheControlService.del(`playlist:songs:${songId}`);
   }
 
   /**
@@ -206,11 +192,9 @@ class PlaylistService {
   async storePlaylistActivities(type, {playlistId, userId, songId}) {
     const activitieId = nanoid(16);
     const timeNow = new Date().toISOString();
-
-    const queryText =
+    const querySql =
       'INSERT INTO playlist_song_activities VALUES ($1, $2, $3, $4, $5, $6)';
-
-    const playlistActivities = await this._db.query(queryText, [
+    const playlistActivities = await this._db.query(querySql, [
       activitieId,
       playlistId,
       songId,
@@ -235,33 +219,29 @@ class PlaylistService {
    * @return {any} Playlist model
    */
   async getHistoryByPlaylistId(playlistId) {
-    const queryText = `
-    SELECT users.username,
-      songs.title,
-      playlist_song_activities.action,
-      playlist_song_activities.time
-    FROM playlist_song_activities
-    INNER JOIN users ON users.id = playlist_song_activities.user_id
-    INNER JOIN songs ON songs.id = playlist_song_activities.song_id
-    INNER JOIN playlists ON playlists.id = playlist_song_activities.playlist_id
-    WHERE playlist_song_activities.playlist_id = $1
-    ORDER BY playlist_song_activities.time ASC
-    LIMIT 3
-    `;
+    const querySql = [
+      'SELECT users.username, songs.title, psa.action, psa.time',
+      'FROM playlist_song_activities AS psa',
+      'INNER JOIN users ON users.id = psa.user_id',
+      'INNER JOIN songs ON songs.id = psa.song_id',
+      'INNER JOIN playlists ON playlists.id = psa.playlist_id',
+      'WHERE psa.playlist_id = $1',
+      'ORDER BY psa.time ASC',
+      'LIMIT 3',
+    ].join(' ');
+    const playlist =
+      await this._db.query(querySql, [playlistId]);
 
-    const playlistSongActivities =
-      await this._db.query(queryText, [playlistId]);
-
-    if (!playlistSongActivities.rowCount) {
+    if (!playlist.rowCount) {
       throw new NotFoundError('playlist ID tidak ditemukan');
     }
 
     await this._service.cacheControlService.set(
         `playlist:activities:${playlistId}`,
-        JSON.stringify(playlistSongActivities.rows),
+        JSON.stringify(playlist.rows),
     );
 
-    return playlistSongActivities.rows;
+    return playlist.rows;
   }
 
   /**
@@ -271,16 +251,14 @@ class PlaylistService {
    * @param {string} owner User id
    */
   async verifyPlaylistOwner(playlistId, owner) {
-    const queryText = 'SELECT id, owner FROM playlists WHERE id = $1';
+    const querySql = 'SELECT id, owner FROM playlists WHERE id = $1';
+    const playlist = await this._db.query(querySql, [playlistId]);
 
-    const playlists = await this._db.query(queryText, [playlistId]);
-
-    if (!playlists.rowCount) {
+    if (!playlist.rowCount) {
       throw new NotFoundError('Playlist tidak ditemukan');
     }
 
-    const playlist = playlists.rows[0];
-    if (playlist.owner !== owner) {
+    if (playlist.rows[0]?.owner !== owner) {
       throw new AuthorizationError(
           'Anda tidak mempunyai akses. Atas resource ini...',
       );

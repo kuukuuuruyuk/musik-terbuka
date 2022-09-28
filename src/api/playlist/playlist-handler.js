@@ -36,10 +36,9 @@ class PlaylistHandler {
 
     const {payload, auth} = request;
     const credentialId = auth.credentials?.id;
-    const playlistId = await this._service.playlistService.storePlaylist(
-        payload?.name,
-        credentialId,
-    );
+    const name = payload?.name;
+    const playlistId =
+      await this._service.playlistService.storePlaylist(name, credentialId);
 
     return h.response({
       status: 'success',
@@ -101,6 +100,7 @@ class PlaylistHandler {
    */
   async postSongToPlaylistHandler(request, h) {
     const {playlistValidator} = this._validator;
+
     playlistValidator.validatePostSongToPlaylist(request.payload);
 
     const {payload, auth, params} = request;
@@ -137,7 +137,6 @@ class PlaylistHandler {
     const playlistId = params?.playlistId;
     const credentialId = auth.credentials?.id;
     const {playlistService} = this._service;
-
     const [, playlistData, songsData] = await Promise.all([
       playlistService.verifyPlaylistAccess(playlistId, credentialId),
       playlistService.getPlaylistMappedById(playlistId),
@@ -199,7 +198,6 @@ class PlaylistHandler {
     const {params, auth} = request;
     const playlistId = params?.playlistId;
     const userId = auth.credentials?.id;
-
     const [, activities] = await Promise.all([
       this._service.playlistService.verifyPlaylistAccess(playlistId, userId),
       this._service.playlistService.getHistoryByPlaylistId(playlistId),

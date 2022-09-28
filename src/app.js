@@ -46,25 +46,24 @@ async function appServer(server) {
 
   // Init redis
   clientRedis = () => {
-    const _client = redis.createClient({
+    const client = redis.createClient({
       socket: {host: config.redis.host},
     });
 
-    _client.on('error', (error) => {
+    client.on('error', (error) => {
       console.log(error);
     });
 
-    _client.connect();
+    client.connect();
 
-    return _client;
+    return client;
   };
 
   // Redis cache control
   const cacheControlService = new CacheControlService({client: clientRedis()});
-
   // Upload service
   const uploadService = new UploadService({
-    path: path.resolve(__dirname, process.env.UPLOADS_DIRECTORY),
+    path: path.resolve(__dirname, config.app.storage),
   });
 
   // Services
@@ -97,27 +96,30 @@ async function appServer(server) {
   const uploadValidator = new UploadValidator(validationSchema);
 
   // RabbitMQ producer service
-  const amqConnection =
-    await amqp.connect(config.rabbitMq.server, (error0, _connection) => {
-      if (error0) {
-        throw error0;
-      }
+  const rabbitMqOpt = (error, _connection) => {
+    if (error) {
+      console.log('amq error');
+      console.log(error);
+      throw error;
+    }
 
-      const queue = 'hello';
-      const msg = 'Hello world';
+    const queue = 'hello';
+    const msg = 'Hello world';
 
-      channel.assertQueue(queue, {
-        durable: false,
-      });
-
-      channel.sendToQueue(queue, Buffer.from(msg));
-      console.log(' [x] Sent %s', msg);
+    channel.assertQueue(queue, {
+      durable: false,
     });
-  const producerService = new ProducerService({connection: amqConnection});
+
+    channel.sendToQueue(queue, Buffer.from(msg));
+    console.log(' [x] Sent %s', msg);
+  };
+
+  const rabbitMqUrl = config.rabbitMq.server;
+  const rabbitMqConn = await amqp.connect(rabbitMqUrl, rabbitMqOpt);
+  const producerService = new ProducerService({connection: rabbitMqConn});
 
   // Token manager
   const tokenManager = new TokenManager();
-
   // s3 service
   const s3Service = new AWS.S3();
   const awsService = new AWSSimpleStorageService({s3: s3Service});
@@ -142,9 +144,9 @@ async function appServer(server) {
       handler: async (request, h) => {
         truncateValidator.validatePayload(request.payload);
 
-        const {token} = request.payload;
+        const token = request.payload?.token;
 
-        if (token !== process.env.MYTRUNCATE_TOKEN) {
+        if (token !== config.app.truncateToken) {
           throw new InvariantError('Token is invalid man');
         }
 
