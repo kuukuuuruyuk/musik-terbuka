@@ -26,14 +26,13 @@ class AuthenticationHandler {
    */
   async postAuthenticationHandler(request, h) {
     const authValidator = this._validator.authValidator;
+
     authValidator.validatePostAuthPayload(request.payload);
 
-    const {username, password} = payload;
+    const {username, password} = request.payload;
     const token =
       await this._service.userService.userCrendential(username, password);
-
     const userId = {id: token?.id};
-
     const [jwtAccessToken, jwtRefreshToken] = await Promise.all([
       this._service.tokenManager.generateAccessToken(userId),
       this._service.tokenManager.generateRefreshToken(userId),
@@ -63,17 +62,13 @@ class AuthenticationHandler {
    * @return {any} Authentication data
    */
   async putAuthenticationHandler(request, h) {
-    const {payload} = request;
+    this._validator.authValidator.validatePutAuthPayload(request.payload);
 
-    this._validator.authValidator.validatePutAuthPayload(payload);
-
-    const {refreshToken} = payload;
-
+    const {refreshToken} = request.payload;
     const [, token] = await Promise.all([
       this._service.authService.verifyToken(refreshToken),
       this._service.tokenManager.verifyRefreshToken(refreshToken),
     ]);
-
     const jwtAccessToken =
       await this._service.tokenManager.generateAccessToken(token);
 
@@ -92,11 +87,9 @@ class AuthenticationHandler {
    * @return {any} Authenticaion data
    */
   async deleteAuthenticationHandler(request, h) {
-    const {payload} = request;
+    this._validator.authValidator.validateDeleteAuthPayload(request.payload);
 
-    this._validator.authValidator.validateDeleteAuthPayload(payload);
-
-    const {refreshToken} = payload;
+    const {refreshToken} = request.payload;
 
     await Promise.all([
       this._service.tokenManager.verifyRefreshToken(refreshToken),

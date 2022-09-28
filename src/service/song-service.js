@@ -25,68 +25,56 @@ class SongService {
   async storeSong(payload) {
     const {title, year, performer, genre, duration, albumId} = payload;
     const songId = nanoid(16);
-    const queryText = `
-    INSERT INTO songs(id,
-      title,
-      year,
-      performer,
-      genre,
-      duration,
-      album_id
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING id
-    `;
+    const sql = [
+      'INSERT INTO',
+      'songs(id, title, year, performer, genre, duration, album_id)',
+      'VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      'RETURNING id',
+    ].join(' ');
+    const values = [songId, title, year, performer, genre, duration, albumId];
+    const song = await this._db.query(sql, values);
 
-    const songs = await this._db.query(queryText, [
-      songId,
-      title,
-      year,
-      performer,
-      genre,
-      duration,
-      albumId,
-    ]);
-
-    if (!songs.rows[0].id) throw new InvariantError('Failed to add music!');
+    if (!song.rows[0]?.id) throw new InvariantError('Failed to add music!');
 
     await this._service.cacheControlService.del('songs');
 
-    return songs.rows[0].id;
+    return song.rows[0]?.id;
   }
 
   /**
    * Store song
    *
-   * @param {any} title Song title
-   * @param {any} performer Song performer
+   * @param {string} title Song title
+   * @param {string} performer Song performer
    * @return {any} Song data
    */
   async _getSongs(title='', performer='') {
-    const querySql = new Set([
-      `SELECT id, title, performer`,
-      `FROM songs`,
+    const sqlQuery = new Set([
+      'SELECT id, title, performer',
+      'FROM songs',
     ]);
 
     if (title !== undefined) {
-      const strQuery = `WHERE LOWER(title) LIKE LOWER('%${title}%')`;
-      querySql.add(strQuery);
+      const whereQuery = `WHERE LOWER(title) LIKE LOWER('%${title}%')`;
+      sqlQuery.add(whereQuery);
     }
 
     if (performer !== undefined) {
-      const strQuery = `WHERE LOWER(performer) LIKE LOWER('%${performer}%')`;
-      querySql.add(strQuery);
+      const whereQuery = `WHERE LOWER(performer) LIKE LOWER('%${performer}%')`;
+      sqlQuery.add(whereQuery);
     }
 
     const itemQuery = [];
     const itemWhere = [];
 
-    for (const item of querySql) {
+    for (const item of sqlQuery) {
       const arrQuery = item.split(/\s+/);
       const whereKeyword = ['WHERE'];
       const whereTokenizer = arrQuery.filter(function(token) {
         const tokenizer = token.toUpperCase();
         return tokenizer.length >= 2 && whereKeyword.indexOf(tokenizer) === -1;
       });
+
       if (arrQuery.indexOf(whereKeyword[0]) !== -1) {
         itemWhere.push(whereTokenizer.join(' '));
       } else {
@@ -102,16 +90,15 @@ class SongService {
       itemQuery.push(sugarQuery);
     }
 
-    const queryText = itemQuery.join(' ');
-    const songs = await this._db.query(queryText);
+    const song = await this._db.query(itemQuery.join(' '));
 
     await this._service.cacheControlService.set(
         'songs',
-        JSON.stringify(songs),
+        JSON.stringify(song),
         (60 * 30),
     );
 
-    return songs;
+    return song;
   }
 
   /**
@@ -122,8 +109,9 @@ class SongService {
    */
   async getSongs(payload) {
     try {
-      const songs = await this._service.cacheControlService.get('songs');
-      return JSON.parse(songs);
+      const song = await this._service.cacheControlService.get('songs');
+
+      return JSON.parse(song);
     } catch (_error) {
       const {title, performer} = payload;
       return await this._getSongs(title, performer);
@@ -137,22 +125,16 @@ class SongService {
    * @return {any} Song model
    */
   async getSongById(id) {
-    const queryText = `
-    SELECT id,
-      title,
-      year,
-      performer,
-      genre,
-      duration,
-      album_id
-    FROM songs
-    WHERE id = $1
-    `;
-    const songs = await this._db.query(queryText, [id]);
+    const sql = [
+      'SELECT id, title, year, performer, genre, duration, album_id',
+      'FROM songs',
+      'WHERE id = $1',
+    ].join(' ');
+    const song = await this._db.query(sql, [id]);
 
-    if (!songs.rowCount) throw new NotFoundError('Not found music ID!');
+    if (!song.rowCount) throw new NotFoundError('Not found music ID!');
 
-    const song = songs.rows.map((item) => ({
+    const data = song.rows.map((item) => ({
       id: item.id,
       title: item.title,
       year: item.year,
@@ -164,7 +146,7 @@ class SongService {
 
     await this._service.cacheControlService.del('songs');
 
-    return song;
+    return data;
   }
 
   /**
@@ -174,23 +156,20 @@ class SongService {
    * @return {any} Song model
    */
   async getSongsByAlbumId(albumId) {
-    const queryText = `
-    SELECT id,
-      title,
-      performer
-    FROM songs
-    WHERE album_id = $1
-    `;
-
-    const songs = await this._db.query(queryText, [albumId]);
+    const sql = [
+      'SELECT id, title, performer',
+      'FROM songs',
+      'WHERE album_id = $1',
+    ].join(' ');
+    const song = await this._db.query(sql, [albumId]);
 
     await this._service.cacheControlService.set(
         `song:inAlbum:${albumId}`,
-        JSON.stringify(songs.rows),
+        JSON.stringify(song.rows),
     );
 
 
-    return songs.rows;
+    return song.rows;
   }
 
   /**
@@ -201,28 +180,19 @@ class SongService {
    */
   async updateSongById(songId, payload) {
     const {title, year, performer, genre, duration, albumId} = payload;
-    const queryText = `
-    UPDATE songs
-    SET title = $1,
-      year = $2,
-      performer = $3,
-      genre = $4,
-      duration = $5,
-      album_id = $6
-    WHERE id = $7
-    RETURNING id
-    `;
-    const songs = await this._db.query(queryText, [
-      title,
-      year,
-      performer,
-      genre,
-      duration,
-      albumId,
-      songId,
-    ]);
+    const sql = [
+      'UPDATE songs',
+      'SET',
+      'title = $1, year = $2,',
+      'performer = $3, genre = $4,',
+      'duration = $5, album_id = $6',
+      'WHERE id = $7',
+      'RETURNING id',
+    ].join(' ');
+    const values = [title, year, performer, genre, duration, albumId, songId];
+    const song = await this._db.query(sql, values);
 
-    if (!songs.rowCount) {
+    if (!song.rowCount) {
       throw new NotFoundError('Failed to update music, ID not found!');
     }
 
@@ -235,10 +205,10 @@ class SongService {
    * @param {string} songId Song id
    */
   async deleteSongById(songId) {
-    const queryText = 'DELETE FROM songs WHERE id = $1 RETURNING id';
-    const songs = await this._db.query(queryText, [songId]);
+    const sql = 'DELETE FROM songs WHERE id = $1 RETURNING id';
+    const song = await this._db.query(sql, [songId]);
 
-    if (!songs.rowCount) {
+    if (!song.rowCount) {
       throw new NotFoundError('Failed to delete a music, ID not found!');
     }
 
@@ -251,11 +221,10 @@ class SongService {
    * @param {string} songId Song id
    */
   async verifyExistingSongById(songId) {
-    const queryText = 'SELECT id FROM songs WHERE id = $1';
+    const sql = 'SELECT id FROM songs WHERE id = $1';
+    const song = await this._db.query(sql, [songId]);
 
-    const songs = await this._db.query(queryText, [songId]);
-
-    if (!songs.rowCount) {
+    if (!song.rowCount) {
       throw new NotFoundError('Not found music ID!');
     }
   }

@@ -1,6 +1,6 @@
 const Joi = require('joi');
-
 const currentYear = new Date().getFullYear();
+
 const songPayloadSchema = Joi.object({
   title: Joi.string()
       .max(255)

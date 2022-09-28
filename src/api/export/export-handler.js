@@ -33,7 +33,7 @@ class ExportSongsHandler {
       playlistsService.verifyPlaylistAccess(playlistId, auth.credentials?.id),
       exportService.sendMessage('export:playlists', JSON.stringify({
         playlistId,
-        targetEmail: payload.targetEmail,
+        targetEmail: payload?.targetEmail,
       })),
     ]);
 

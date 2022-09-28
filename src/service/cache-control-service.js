@@ -13,9 +13,9 @@ class CacheControlService {
   /**
    * set cahce
    *
-   * @param {any} key Set key
-   * @param {any} value Set value
-   * @param {any} expirationInSecond Expiration in second
+   * @param {string} key Set key
+   * @param {string} value Set value
+   * @param {number} expirationInSecond Expiration in second
    */
   async set(key, value, expirationInSecond = 1800) { // 1800 detik = 30 menit
     await this._client.set(key, value, {
@@ -26,7 +26,7 @@ class CacheControlService {
   /**
    * Get cache
    *
-   * @param {any} key Client key
+   * @param {string} key Client key
    * @return {any} Client data
    */
   async get(key) {
@@ -40,7 +40,7 @@ class CacheControlService {
   /**
    * Delete cache by key
    *
-   * @param {any} key Client key
+   * @param {string} key Client key
    * @return {any} Cache data
    */
   del(key) {

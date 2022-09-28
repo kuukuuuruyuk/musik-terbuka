@@ -12,50 +12,50 @@ const {InvariantError} = require('../../exception/invariant-error');
  * @return {any} Hapi response
  */
 function errorView(request, h) {
-  const {response: _r} = request;
+  const response = request.response;
 
-  if (_r instanceof Error) {
-    console.log(_r);
-    if (_r instanceof ClientError) {
+  if (response instanceof Error) {
+    console.error(response);
+    if (response instanceof ClientError) {
+      const statusCode = response.output?.statusCode;
+
       return h.response({
         status: 'fail',
-        message: _r.message,
-      }).code(_r.statusCode);
-    }
-
-    if (_r instanceof NotFoundError) {
-      return h.response({
-        status: 'error',
-        message: _r.message,
-      }).code(404);
-    }
-
-    if (_r instanceof AuthorizationError) {
-      return h.response({
-        status: 'error',
-        message: _r.message,
-      }).code(403);
-    }
-
-    if (_r instanceof AuthenticationError) {
-      return h.response({
-        status: 'error',
-        message: _r.message,
-      }).code(401);
-    }
-
-    if (_r instanceof InvariantError) {
-      const {statusCode} = _r.output;
-
-      return h.response({
-        status: 'error',
-        message: _r.message,
+        message: response.message,
       }).code(statusCode);
     }
 
-    if (!_r.isServer) {
-      return h.continue;
+    if (response instanceof NotFoundError) {
+      return h.response({
+        status: 'error',
+        message: response.message,
+      }).code(404);
     }
+
+    if (response instanceof AuthorizationError) {
+      return h.response({
+        status: 'error',
+        message: response.message,
+      }).code(403);
+    }
+
+    if (response instanceof AuthenticationError) {
+      return h.response({
+        status: 'error',
+        message: response.message,
+      }).code(401);
+    }
+
+    if (response instanceof InvariantError) {
+      const statusCode = response.output?.statusCode;
+
+      return h.response({
+        status: 'error',
+        message: response.message,
+      }).code(statusCode);
+    }
+
+    if (!response.isServer) return h.continue;
 
     return h.response({
       status: 'error',
@@ -63,7 +63,7 @@ function errorView(request, h) {
     }).code(500);
   }
 
-  return h.continue || _r;
+  return h.continue || response;
 }
 
 module.exports = {errorView};

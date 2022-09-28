@@ -30,10 +30,9 @@ class CollaborationHandler {
     collaborationValidator.validatePostCollaboration(request.payload);
 
     const {payload, auth} = request;
-    const credentialId = auth.credentials?.id;
     const {playlistId, userId} = payload;
+    const credentialId = auth.credentials?.id;
     const playlistService = this._service.playlistService;
-
     const [,, collaborationId] = await Promise.all([
       playlistService.verifyPlaylistOwner(playlistId, credentialId),
       this._service.userService.verifyExistingUserWithUserId(userId),
@@ -56,11 +55,12 @@ class CollaborationHandler {
    */
   async deleteCollaborationHandler(request, h) {
     const collaborationValidator = this._validator.collaborationValidator;
-    collaborationValidator.validateDeleteCollaboration(request?.payload);
+
+    collaborationValidator.validateDeleteCollaboration(request.payload);
 
     const {payload, auth} = request;
-    const credentialId = auth.credentials?.id;
     const {playlistId, userId} = payload;
+    const credentialId = auth.credentials?.id;
     const {playlistService, collaborationService} = this._service;
 
     await Promise.all([

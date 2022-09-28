@@ -34,6 +34,7 @@ class TokenManager {
   verifyRefreshToken(refreshToken) {
     try {
       const artifacts = Jwt.token.decode(refreshToken);
+
       Jwt.token.verifySignature(artifacts, process.env.REFRESH_TOKEN_KEY);
 
       return artifacts.decoded?.payload;

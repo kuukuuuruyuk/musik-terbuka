@@ -26,14 +26,10 @@ class AlbumHandler {
    * @return {any} Album data as 201 code is success
    */
   async postAlbumHandler(request, h) {
-    const {payload} = request;
+    this._validator.albumValidator.validateAlbumPayload(request.payload);
 
-    this._validator.albumValidator.validateAlbumPayload(payload);
-
-    const albumId = await this._service.albumService.storeAlbum({
-      name: payload.name,
-      year: payload.year,
-    });
+    const {name, year} = request.payload;
+    const albumId = await this._service.albumService.storeAlbum({name, year});
 
     return h.response({
       status: 'success',
@@ -49,8 +45,7 @@ class AlbumHandler {
    * @return {any} Album data
    */
   async getAlbumByIdHandler(request, h) {
-    const {id: albumId} = request.params;
-
+    const albumId = request.params?.id;
     const [album, songs] = await Promise.all([
       this._service.albumService.getAlbumById(albumId),
       this._service.songService.getSongsByAlbumId(albumId),
@@ -70,10 +65,11 @@ class AlbumHandler {
    * @return {any} Album data
    */
   async putAlbumByIdHandler(request, h) {
-    const {payload} = request;
-    this._validator.albumValidator.validateAlbumPayload(payload);
+    this._validator.albumValidator.validateAlbumPayload(request.payload);
 
-    const albumId = request.params?.id;
+    const {params, payload} = request;
+    const albumId = params?.id;
+
     await this._service.albumService.updateAlbumById(albumId, payload);
 
     return h.response({
@@ -90,7 +86,7 @@ class AlbumHandler {
    * @return {any} Album data
    */
   async deleteAlbumByIdHandler(request, h) {
-    const {id: albumId} = request.params;
+    const albumId = request.params?.id;
 
     await this._service.albumService.deleteAlbumById(albumId);
 

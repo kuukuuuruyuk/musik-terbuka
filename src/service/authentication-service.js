@@ -21,15 +21,12 @@ class AuthenticationService {
    */
   async storeToken({userId, accessToken, refershToken}) {
     const authId = nanoid(16);
-    const queryText = `
-    INSERT INTO authentications(id,
-      access_token,
-      refresh_token,
-      user_id
-    ) VALUES ($1, $2, $3, $4)
-    `;
+    const querySql = [
+      'INSERT INTO authentications(id, access_token, refresh_token, user_id)',
+      'VALUES ($1, $2, $3, $4)',
+    ].join(' ');
 
-    await this._db.query(queryText, [
+    await this._db.query(querySql, [
       authId,
       accessToken,
       refershToken,
@@ -43,18 +40,14 @@ class AuthenticationService {
    * @param {string} accessToken Access token string
    */
   async verifyToken(accessToken) {
-    const queryText = `
-    SELECT id,
-      access_token,
-      refresh_token,
-      user_id
-    FROM authentications
-    WHERE access_token = $1
-    `;
+    const querySql = [
+      'SELECT id, access_token, refresh_token, user_id',
+      'FROM authentications',
+      'WHERE access_token = $1',
+    ].join(' ');
+    const auth = await this._db.query(querySql, [accessToken]);
 
-    const authentication = await this._db.query(queryText, [accessToken]);
-
-    if (!authentication.rowCount) {
+    if (!auth.rowCount) {
       throw new InvariantError('Refresh token tidak valid...');
     }
   }
@@ -65,10 +58,9 @@ class AuthenticationService {
    * @param {string} accessToken Access token
    */
   async deleteToken(accessToken) {
-    const queryText =
-      'DELETE FROM authentications WHERE access_token = $1';
+    const querySql = 'DELETE FROM authentications WHERE access_token = $1';
 
-    await this._db.query(queryText, [accessToken]);
+    await this._db.query(querySql, [accessToken]);
   }
 }
 

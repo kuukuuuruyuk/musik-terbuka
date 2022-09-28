@@ -7,7 +7,7 @@ class InvariantError extends ClientError {
   /**
    * Invarian error
    *
-   * @param {any} message Error message
+   * @param {string} message Error message
    */
   constructor(message) {
     super(message);

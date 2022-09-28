@@ -28,7 +28,6 @@ class UploadService {
   uploadFile(file, meta) {
     const filename = nanoid(10) + meta.filename;
     const directory = `${this._folder}/${filename}`;
-
     const fileStream = fs.createWriteStream(directory);
 
     return new Promise((resolve, reject) => {
