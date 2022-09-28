@@ -27,7 +27,9 @@ class SongHandler {
    * @return {any} Song data
    */
   async postSongHandler(request, h) {
-    await this._validator.songValidator.validateSongPayload(request.payload);
+    const {payload} = request;
+
+    await this._validator.songValidator.validateSongPayload(payload);
 
     const songId = await this._service.songService.storeSong(payload);
 
@@ -84,11 +86,10 @@ class SongHandler {
    * @return {any} Song data
    */
   async putSongByIdHandler(request, h) {
-    const {payload} = request;
+    this._validator.songValidator.validateSongPayload(request.payload);
 
-    this._validator.songValidator.validateSongPayload(payload);
-
-    const songId = request.params?.id;
+    const {payload, params} = request;
+    const songId = params?.id;
     await this._service.songService.updateSongById(songId, payload);
 
     return h.response({

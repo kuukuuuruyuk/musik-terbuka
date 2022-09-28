@@ -19,11 +19,10 @@ class PlaylistValidator {
    * @param {any} payload Request payload
    */
   validatePostPlaylist(payload) {
-    const {postPlaylistSchema} = this._schema;
-    const validationResult = postPlaylistSchema.validate(payload);
+    const validation = this._schema.postPlaylistSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 
@@ -33,11 +32,10 @@ class PlaylistValidator {
    * @param {any} payload Request payload
    */
   validatePostSongToPlaylist(payload) {
-    const {postSongToPlaylistSchema} = this._schema;
-    const validationResult = postSongToPlaylistSchema.validate(payload);
+    const validation = this._schema.postSongToPlaylistSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 
@@ -47,11 +45,11 @@ class PlaylistValidator {
    * @param {any} payload Request payload
    */
   validateDeleteSongFromPlaylist(payload) {
-    const {deleteSongFromPlaylistSchema} = this._schema;
-    const validationResult = deleteSongFromPlaylistSchema.validate(payload);
+    const validation =
+      this._schema.deleteSongFromPlaylistSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

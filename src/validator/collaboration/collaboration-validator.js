@@ -19,11 +19,10 @@ class CollaborationValidator {
    * @param {any} payload Request payload
    */
   validatePostCollaboration(payload) {
-    const {postCollaborationSchema} = this._schema;
-    const validationResult = postCollaborationSchema.validate(payload);
+    const validation = this._schema.postCollaborationSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 
@@ -33,11 +32,10 @@ class CollaborationValidator {
    * @param {any} payload Request Payload
    */
   validateDeleteCollaboration(payload) {
-    const {deleteCollaborationSchema} = this._schema;
-    const validationResult = deleteCollaborationSchema.validate(payload);
+    const validation = this._schema.deleteCollaborationSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validation.error) {
+      throw new InvariantError(validation.error.message);
     }
   }
 }

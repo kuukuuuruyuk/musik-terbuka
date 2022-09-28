@@ -25,31 +25,26 @@ class CollaborationHandler {
    * @return {any} Collaborator data
    */
   async postCollaborationHandler(request, h) {
-    const {payload, auth} = request;
     const {collaborationValidator} = this._validator;
 
-    collaborationValidator.validatePostCollaboration(payload);
+    collaborationValidator.validatePostCollaboration(request.payload);
 
-    const {id: credentialId} = auth.credentials;
+    const {payload, auth} = request;
+    const credentialId = auth.credentials?.id;
     const {playlistId, userId} = payload;
-    const {
-      playlistService,
-      userService,
-      collaborationService,
-    } = this._service;
-    await playlistService.verifyPlaylistOwner(playlistId, credentialId);
-    await userService.verifyExistingUserWithUserId(userId);
-    const id =
-      await collaborationService.storeCollaboration(playlistId, userId);
+    const playlistService = this._service.playlistService;
 
-    const _response = h.response({
+    const [,, collaborationId] = await Promise.all([
+      playlistService.verifyPlaylistOwner(playlistId, credentialId),
+      this._service.userService.verifyExistingUserWithUserId(userId),
+      this._service.collaborationService.storeCollaboration(playlistId, userId),
+    ]);
+
+    return h.response({
       status: 'success',
       message: 'Kolaborasi berhasil ditambahkan',
-      data: {collaborationId: id},
-    });
-
-    _response.code(201);
-    return _response;
+      data: {collaborationId},
+    }).code(201);
   }
 
   /**
@@ -60,22 +55,17 @@ class CollaborationHandler {
    * @return {any} Collaboration data
    */
   async deleteCollaborationHandler(request, h) {
+    const collaborationValidator = this._validator.collaborationValidator;
+    collaborationValidator.validateDeleteCollaboration(request?.payload);
+
     const {payload, auth} = request;
-
-    this._validator.collaborationValidator.validateDeleteCollaboration(payload);
-
     const credentialId = auth.credentials?.id;
     const {playlistId, userId} = payload;
+    const {playlistService, collaborationService} = this._service;
 
     await Promise.all([
-      this._service.playlistService.verifyPlaylistOwner(
-          playlistId,
-          credentialId,
-      ),
-      this._service.collaborationService.deleteCollaboration(
-          playlistId,
-          userId,
-      ),
+      playlistService.verifyPlaylistOwner(playlistId, credentialId),
+      collaborationService.deleteCollaboration(playlistId, userId),
     ]);
 
     return h.response({

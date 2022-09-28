@@ -12,48 +12,48 @@ const {InvariantError} = require('../../exception/invariant-error');
  * @return {any} Hapi response
  */
 function errorView(request, h) {
-  const {response: _response} = request;
+  const {response: _r} = request;
 
-  if (_response instanceof Error) {
-    console.log(_response);
-    if (_response instanceof ClientError) {
+  if (_r instanceof Error) {
+    console.log(_r);
+    if (_r instanceof ClientError) {
       return h.response({
         status: 'fail',
-        message: _response.message,
-      }).code(_response.statusCode);
+        message: _r.message,
+      }).code(_r.statusCode);
     }
 
-    if (_response instanceof NotFoundError) {
+    if (_r instanceof NotFoundError) {
       return h.response({
         status: 'error',
-        message: _response.message,
+        message: _r.message,
       }).code(404);
     }
 
-    if (_response instanceof AuthorizationError) {
+    if (_r instanceof AuthorizationError) {
       return h.response({
         status: 'error',
-        message: _response.message,
+        message: _r.message,
       }).code(403);
     }
 
-    if (_response instanceof AuthenticationError) {
+    if (_r instanceof AuthenticationError) {
       return h.response({
         status: 'error',
-        message: _response.message,
+        message: _r.message,
       }).code(401);
     }
 
-    if (_response instanceof InvariantError) {
-      const {statusCode} = _response.output;
+    if (_r instanceof InvariantError) {
+      const {statusCode} = _r.output;
 
       return h.response({
         status: 'error',
-        message: _response.message,
+        message: _r.message,
       }).code(statusCode);
     }
 
-    if (!_response.isServer) {
+    if (!_r.isServer) {
       return h.continue;
     }
 
@@ -63,7 +63,7 @@ function errorView(request, h) {
     }).code(500);
   }
 
-  return h.continue || _response;
+  return h.continue || _r;
 }
 
 module.exports = {errorView};

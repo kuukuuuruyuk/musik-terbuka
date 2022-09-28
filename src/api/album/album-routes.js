@@ -42,17 +42,17 @@ class AlbumRoute {
       {
         path: '/albums/{id}/covers',
         method: 'POST',
-        handler: h.postAlbumCover,
+        handler: () => {},
       },
       {
         path: '/albums/{id}/likes',
         method: 'POST',
-        handler: h.postAlbumLikes,
+        handler: () => {},
       },
       {
         path: '/albums/{id}/likes',
         method: 'GET',
-        handler: h.showAlbumLikes,
+        handler: () => {},
       },
     ];
   }

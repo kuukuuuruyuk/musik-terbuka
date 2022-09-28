@@ -171,12 +171,11 @@ class PlaylistHandler {
     const playlistId = params?.playlistId;
     const songId = payload?.songId;
     const userId = auth.credentials?.id;
-    const {playlistService} = this._service;
 
     await Promise.all([
-      playlistService.verifyPlaylistAccess(playlistId, userId),
-      playlistService.deleteSongFromPlaylistBySongId(songId),
-      playlistService.storePlaylistActivities('delete', {
+      this._service.playlistService.verifyPlaylistAccess(playlistId, userId),
+      this._service.playlistService.deleteSongFromPlaylistBySongId(songId),
+      this._service.playlistService.storePlaylistActivities('delete', {
         playlistId,
         userId,
         songId,

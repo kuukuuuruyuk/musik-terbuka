@@ -1,9 +1,11 @@
 const {Pool} = require('pg');
-const api = require('./api');
+const appPlugin = require('./api');
 const amqp = require('amqplib');
 const redis = require('redis');
 const AWS = require('aws-sdk');
 const path = require('path');
+const validationSchema = require('./validator/validator-shcema');
+const config = require('./utils/config');
 // Service
 const {AlbumService} = require('./service/album-service');
 const {SongService} = require('./service/song-service');
@@ -30,36 +32,22 @@ const {CollaborationValidator} =
   require('./validator/collaboration/collaboration-validator');
 const {ExportValidator} = require('./validator/export/export-validator');
 const {UploadValidator} = require('./validator/upload/upload-validator');
-const config = require('./utils/config');
-const validationSchema = require('./validator/validator-shcema');
+
+const JWT_APP_KEY = 'musicterbuka_jwt';
 
 /**
  * App
  * @param {any} server Hapi server
  */
 async function appServer(server) {
-  // Plugin api for register routes
-  const {
-    albumApi,
-    songApi,
-    userApi,
-    playlistApi,
-    authenticationApi,
-    collaborationApi,
-    errorPlugin,
-    uploadApi,
-    exportApi,
-  } = api();
-
+  const options = {auth: JWT_APP_KEY};
   // Database pool
   const pool = new Pool();
 
   // Init redis
-  clientRedis = function() {
+  clientRedis = () => {
     const _client = redis.createClient({
-      socket: {
-        host: config.redis.host,
-      },
+      socket: {host: config.redis.host},
     });
 
     _client.on('error', (error) => {
@@ -110,7 +98,7 @@ async function appServer(server) {
 
   // RabbitMQ producer service
   const amqConnection =
-    await amqp.connect(config.rabbitMq.server, function(error0, connection) {
+    await amqp.connect(config.rabbitMq.server, (error0, _connection) => {
       if (error0) {
         throw error0;
       }
@@ -173,42 +161,42 @@ async function appServer(server) {
   // Register local api plugin
   await server.register([
     {
-      plugin: songApi,
+      plugin: appPlugin.songs(),
       options: {
         service: {songService},
         validator: {songValidator},
       },
     },
     {
-      plugin: albumApi,
+      plugin: appPlugin.albums(),
       options: {
         service: {albumService, songService},
         validator: {albumValidator},
       },
     },
     {
-      plugin: userApi,
+      plugin: appPlugin.users(),
       options: {
         service: {userService},
         validator: {userValidator},
       },
     },
     {
-      plugin: playlistApi,
+      plugin: appPlugin.playlists(options),
       options: {
         service: {playlistService, songService},
         validator: {playlistValidator},
       },
     },
     {
-      plugin: authenticationApi,
+      plugin: appPlugin.authentications(),
       options: {
         service: {authService, userService, tokenManager},
         validator: {authValidator},
       },
     },
     {
-      plugin: collaborationApi,
+      plugin: appPlugin.collaborations(options),
       options: {
         service: {
           userService,
@@ -219,14 +207,14 @@ async function appServer(server) {
       },
     },
     {
-      plugin: uploadApi,
+      plugin: appPlugin.uploadFile(),
       options: {
         service: {uploadService, awsService},
         validator: {uploadValidator},
       },
     },
     {
-      plugin: exportApi,
+      plugin: appPlugin.exportSongs(options),
       options: {
         service: {
           playlistService,
@@ -235,8 +223,8 @@ async function appServer(server) {
         validator: {exportValidator},
       },
     },
-    {plugin: errorPlugin},
+    {plugin: appPlugin.errorPlugin()},
   ]);
 }
 
-module.exports = {appServer};
+module.exports = {appServer, JWT_APP_KEY};

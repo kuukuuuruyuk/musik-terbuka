@@ -30,11 +30,11 @@ class CacheControlService {
    * @return {any} Client data
    */
   async get(key) {
-    const result = await this._client.get(key);
+    const cache = await this._client.get(key);
 
-    if (result === null) throw new Error('Cache tidak ditemukan');
+    if (cache === null) throw new Error('Cache tidak ditemukan');
 
-    return result;
+    return cache;
   }
 
   /**

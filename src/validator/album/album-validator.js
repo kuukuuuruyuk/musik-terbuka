@@ -18,11 +18,10 @@ class AlbumValidator {
    * @param {any} payload Request payload
    */
   validateAlbumPayload(payload) {
-    const {albumPayloadSchema} = this._schema;
-    const validationResult = albumPayloadSchema.validate(payload);
+    const validator = this._schema.albumPayloadSchema.validate(payload);
 
-    if (validationResult.error) {
-      throw new InvariantError(validationResult.error.message);
+    if (validator.error) {
+      throw new InvariantError(validator.error.message);
     }
   }
 }

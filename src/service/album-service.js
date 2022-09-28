@@ -23,7 +23,7 @@ class AlbumService {
    * @param {string} name Album model
    * @param {number} year Album year
    */
-  async storeAlbum(name='', year='') {
+  async storeAlbum(name='', year=0) {
     const albumId = nanoid(16);
     const queryText = `
     INSERT INTO albums(id,
@@ -68,17 +68,17 @@ class AlbumService {
   /**
    * Edit album by id
    *
-   * @param {string} id Album id
+   * @param {string} albumId Album id
    * @param {any} param1 Album model
    */
-  async updateAlbumById(id, {name, year}) {
+  async updateAlbumById(albumId, {name, year}) {
     const queryText = `
     UPDATE albums
     SET name = $1,
       year = $2
     WHERE id = $3
     `;
-    const result = await this._db.query(queryText, [name, year, id]);
+    const result = await this._db.query(queryText, [name, year, albumId]);
 
     if (!result.rowCount) throw new NotFoundError('Cannot find album ID!');
 
