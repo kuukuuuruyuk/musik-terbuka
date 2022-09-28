@@ -23,8 +23,8 @@ class UploadImagesHandler {
    * @return {any} Response image when success upload
    */
   async postUploadImagesHandler(request, h) {
-    const {data} = request.payload;
-    const {uploadValidator} = this._validator;
+    const data = request.payload?.data;
+    const uploadValidator = this._validator.uploadValidator;
 
     uploadValidator.validateUploadHeadersSchema(data.hapi.headers);
 

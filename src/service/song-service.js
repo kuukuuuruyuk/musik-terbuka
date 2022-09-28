@@ -130,11 +130,11 @@ class SongService {
       'FROM songs',
       'WHERE id = $1',
     ].join(' ');
-    const song = await this._db.query(sql, [id]);
+    const songs = await this._db.query(sql, [id]);
 
-    if (!song.rowCount) throw new NotFoundError('Not found music ID!');
+    if (!songs.rowCount) throw new NotFoundError('Not found music ID!');
 
-    const data = song.rows.map((item) => ({
+    const song = songs.rows.map((item) => ({
       id: item.id,
       title: item.title,
       year: item.year,
@@ -146,7 +146,7 @@ class SongService {
 
     await this._service.cacheControlService.del('songs');
 
-    return data;
+    return song;
   }
 
   /**

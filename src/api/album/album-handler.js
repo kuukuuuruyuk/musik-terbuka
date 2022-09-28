@@ -29,7 +29,7 @@ class AlbumHandler {
     this._validator.albumValidator.validateAlbumPayload(request.payload);
 
     const {name, year} = request.payload;
-    const albumId = await this._service.albumService.storeAlbum({name, year});
+    const albumId = await this._service.albumService.storeAlbum(name, year);
 
     return h.response({
       status: 'success',

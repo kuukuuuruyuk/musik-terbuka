@@ -27,13 +27,15 @@ class ExportSongsHandler {
 
     const {params, auth} = request;
     const playlistId = params?.playlistId;
+    const targetEmail = payload?.targetEmail;
+    const credentialId = auth.credentials?.id;
     const {playlistsService, exportService} = this._service;
 
     await Promise.all([
-      playlistsService.verifyPlaylistAccess(playlistId, auth.credentials?.id),
+      playlistsService.verifyPlaylistAccess(playlistId, credentialId),
       exportService.sendMessage('export:playlists', JSON.stringify({
         playlistId,
-        targetEmail: payload?.targetEmail,
+        targetEmail,
       })),
     ]);
 

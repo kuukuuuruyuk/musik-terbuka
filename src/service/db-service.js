@@ -15,13 +15,13 @@ class DBService {
    * Reset isi database
    */
   async truncateDB() {
-    const querySql = [
+    const sql = [
       'TRUNCATE',
       'songs, albums, playlist_songs, authentications, users, playlists,',
       'collaborations, playlist_song_activities, user_album_likes',
     ].join(' ');
 
-    await this._db.query(querySql);
+    await this._db.query(sql);
   }
 }
 
