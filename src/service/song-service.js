@@ -48,7 +48,7 @@ class SongService {
    * @param {string} performer Song performer
    * @return {any} Song data
    */
-  async _getSongs(title='', performer='') {
+  async getSongs(title, performer) {
     const sqlQuery = new Set([
       'SELECT id, title, performer',
       'FROM songs',
@@ -90,32 +90,12 @@ class SongService {
       itemQuery.push(sugarQuery);
     }
 
-    const song = await this._db.query(itemQuery.join(' '));
+    itemQuery.push('ORDER BY created_at DESC');
+    itemQuery.push('LIMIT 2');
 
-    await this._service.cacheControlService.set(
-        'songs',
-        JSON.stringify(song),
-        (60 * 30),
-    );
+    const songs = await this._db.query(itemQuery.join(' '));
 
-    return song;
-  }
-
-  /**
-   * Store song
-   *
-   * @param {any} payload Request payload
-   * @return {any} Song data
-   */
-  async getSongs(payload) {
-    try {
-      const song = await this._service.cacheControlService.get('songs');
-
-      return JSON.parse(song);
-    } catch (_error) {
-      const {title, performer} = payload;
-      return await this._getSongs(title, performer);
-    }
+    return songs.rows;
   }
 
   /**
@@ -183,10 +163,10 @@ class SongService {
     const sql = [
       'UPDATE songs',
       'SET',
-      'title = $1, year = $2,',
-      'performer = $3, genre = $4,',
-      'duration = $5, album_id = $6',
-      'WHERE id = $7',
+      'title=$1, year=$2,',
+      'performer=$3, genre=$4,',
+      'duration=$5, album_id=$6',
+      'WHERE id=$7',
       'RETURNING id',
     ].join(' ');
     const values = [title, year, performer, genre, duration, albumId, songId];
@@ -205,7 +185,7 @@ class SongService {
    * @param {string} songId Song id
    */
   async deleteSongById(songId) {
-    const sql = 'DELETE FROM songs WHERE id = $1 RETURNING id';
+    const sql = 'DELETE FROM songs WHERE id=$1 RETURNING id';
     const song = await this._db.query(sql, [songId]);
 
     if (!song.rowCount) {
@@ -221,7 +201,7 @@ class SongService {
    * @param {string} songId Song id
    */
   async verifyExistingSongById(songId) {
-    const sql = 'SELECT id FROM songs WHERE id = $1';
+    const sql = 'SELECT id FROM songs WHERE id=$1';
     const song = await this._db.query(sql, [songId]);
 
     if (!song.rowCount) {

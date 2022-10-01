@@ -23,10 +23,11 @@ class UserService {
    * @return {string} User id
    */
   async storeUser(payload) {
-    const {username, password, fullname} = payload;
+    const username = payload?.username;
 
     await this._isUserExist(username);
 
+    const {password, fullname} = payload;
     const userId = nanoid(16);
     const hashPass = await bcrypt.hash(password, 10);
     const sql = [
@@ -49,11 +50,7 @@ class UserService {
    * @param {string} username Username
    */
   async _isUserExist(username) {
-    const sql = [
-      'SELECT username',
-      'FROM users',
-      'WHERE username = $1',
-    ].join(' ');
+    const sql = 'SELECT username FROM users WHERE username=$1';
     const user = await this._db.query(sql, [username]);
 
     if (user.rows.length > 0) {
@@ -68,7 +65,7 @@ class UserService {
    * @param {string} userId User id
    */
   async verifyExistingUserWithUserId(userId) {
-    const sql = 'SELECT id FROM users WHERE id = $1';
+    const sql = 'SELECT id FROM users WHERE id=$1';
     const user = await this._db.query(sql, [userId]);
 
     if (!user.rowCount) {
@@ -84,21 +81,21 @@ class UserService {
    * @return {string} User id
    */
   async userCrendential(username, password) {
-    const sql = 'SELECT id, password FROM users WHERE username = $1';
+    const sql = 'SELECT id, password FROM users WHERE username=$1';
     const user = await this._db.query(sql, [username]);
 
     if (!user.rowCount) {
       throw new AuthenticationError('Username yang anda berikan salah...');
     }
 
-    const {id: userId, password: hashedPassword} = user.rows[0];
+    const hashedPassword = user.rows[0]?.password;
     const match = await bcrypt.compare(password, hashedPassword);
 
     if (!match) {
       throw new AuthenticationError('Password yang anda berikan salah');
     }
 
-    return userId;
+    return user.rows[0]?.id;
   }
 }
 

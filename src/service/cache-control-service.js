@@ -4,23 +4,23 @@
 class CacheControlService {
   /**
    * Cache control service
-   * @param {any} redis Redis
+   *
+   * @param {any} service Redis
    */
-  constructor(redis) {
-    this._client = redis.client;
+  constructor(service) {
+    this._client = service.redis;
   }
 
   /**
    * set cahce
+   * 1800 detik = 30 menit
    *
    * @param {string} key Set key
    * @param {string} value Set value
-   * @param {number} expirationInSecond Expiration in second
+   * @param {number} expr Expiration in second
    */
-  async set(key, value, expirationInSecond = 1800) { // 1800 detik = 30 menit
-    await this._client.set(key, value, {
-      EX: expirationInSecond,
-    });
+  async set(key, value, expr = 1800) {
+    await this._client.set(key, value, {EX: expr});
   }
 
   /**
