@@ -17,7 +17,7 @@ class UploadValidator {
    * validate upload hader
    * @param {any} header Header request
    */
-  validateUploadHeaderSchema(header) {
+  validateUploadHeader(header) {
     const validation = this._schema.uploadHeaderSchema.validate(header);
 
     if (validation.error) {
