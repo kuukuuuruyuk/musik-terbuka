@@ -17,7 +17,7 @@ class PlaylistRoute {
    */
   routes(options) {
     const h = this._h;
-    const {auth} = options;
+    const auth = options.auth;
 
     return [
       {

@@ -7,7 +7,6 @@ const {CollaborationHandler} = require('./collaboration/collaborator-handler');
 const {PlaylistHandler} = require('./playlist/playlist-handler');
 const {SongHandler} = require('./song/song-handler');
 const {UserHandler} = require('./user/user-handler');
-const {UploadImagesHandler} = require('./upload/upload-handler');
 const {ExportSongsHandler} = require('./export/export-handler');
 // Routes
 const {AuthenticationRoute} = require('./authentication/authentication-routes');
@@ -16,7 +15,6 @@ const {PlaylistRoute} = require('./playlist/playlist-routes');
 const {AlbumRoute} = require('./album/album-routes');
 const {SongRoute} = require('./song/song-routes');
 const {UserRoute} = require('./user/user-routes');
-const {UploadRoute} = require('./upload/upload-routes');
 const {ExportRoute} = require('./export/export-routes');
 // Error plugin
 const {errorView} = require('./error-plugin');
@@ -27,13 +25,13 @@ const {errorView} = require('./error-plugin');
  * @return {any}
  */
 const pluginHandler = {
-  albums: () => ({
+  albums: (options) => ({
     name: 'albums',
     version: '1.0.0',
     register: async (server, {service, validator}) => {
       const serverHandler = new AlbumHandler(service, validator);
       const serverRoute = new AlbumRoute(serverHandler);
-      server.route(serverRoute.routes());
+      server.route(serverRoute.routes(options));
     },
   }),
   songs: () => ({
@@ -86,15 +84,6 @@ const pluginHandler = {
     version: '1.0.0',
     register: async (server) => {
       server.ext('onPreResponse', errorView);
-    },
-  }),
-  uploadFile: () => ({
-    name: 'Uploads File',
-    version: '1.0.0',
-    register: async (server, {service, validator}) => {
-      const serverHandler = new UploadImagesHandler(service, validator);
-      const serverRoute = new UploadRoute(serverHandler);
-      server.route(serverRoute.routes());
     },
   }),
   exportSongs: (options) => ({

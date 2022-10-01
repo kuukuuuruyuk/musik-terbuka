@@ -28,10 +28,10 @@ class SongHandler {
    */
   async postSongHandler(request, h) {
     const payload = request.payload;
-    const [, songId] = await Promise.all([
-      this._validator.songValidator.validateSongPayload(payload),
-      this._service.songService.storeSong(payload),
-    ]);
+
+    await this._validator.songValidator.validateSongPayload(payload);
+
+    const songId = await this._service.songService.storeSong(payload);
 
     return h.response({
       status: 'success',

@@ -17,7 +17,7 @@ function errorView(request, h) {
   if (response instanceof Error) {
     console.error(response);
     if (response instanceof ClientError) {
-      const statusCode = response.output?.statusCode;
+      const statusCode = response.statusCode;
 
       return h.response({
         status: 'fail',
@@ -47,7 +47,7 @@ function errorView(request, h) {
     }
 
     if (response instanceof InvariantError) {
-      const statusCode = response.output?.statusCode;
+      const statusCode = response.statusCode;
 
       return h.response({
         status: 'error',

@@ -22,7 +22,7 @@ class ExportRoute {
       {
         method: 'POST',
         path: '/export/playlists/{playlistId}',
-        handler: this._h.postExportSongsHandler,
+        handler: this._h.postExportPlaylistHandler,
         options: {
           auth: options.auth,
         },
