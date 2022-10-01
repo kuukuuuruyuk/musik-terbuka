@@ -6,11 +6,26 @@ const uploadHeaderSchema = Joi.object({
           'image/apng',
           'image/avif',
           'image/gif',
-          'image/png',
           'image/jpeg',
-          'image/jpg',
+          'image/png',
+          'image/svg+xml',
           'image/webp',
+      )
+      .required(),
+}).unknown();
+
+const imageHeadersSchema = Joi.object({
+  'content-type': Joi.string()
+      .valid(
+          'image/apng',
+          'image/avif',
+          'image/gif',
+          'image/jpeg',
+          'image/png',
+          'image/svg+xml',
+          'image/webp',
+          'image/jpg',
       ).required(),
 }).unknown();
 
-module.exports = {uploadHeaderSchema};
+module.exports = {uploadHeaderSchema, imageHeadersSchema};

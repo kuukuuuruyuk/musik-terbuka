@@ -13,9 +13,11 @@ class AlbumRoute {
 
   /**
    * for handler route
+   *
+   * @param {any} options Options hapi handler
    * @return {ServerRoute[]} route data
    */
-  routes() {
+  routes(options) {
     const h = this._h;
 
     return [
@@ -42,17 +44,36 @@ class AlbumRoute {
       {
         path: '/albums/{id}/covers',
         method: 'POST',
-        handler: () => {},
+        handler: h.postAlbumCoverHandler,
+        options: {
+          payload: {
+            allow: 'multipart/form-data',
+            multipart: true,
+            // parse: true,
+            output: 'stream',
+            maxBytes: 512000,
+          },
+        },
+      },
+      {
+        method: 'GET',
+        path: '/albums/cover/{param*}',
+        handler: {
+          directory: {
+            path: options.handler.path,
+          },
+        },
       },
       {
         path: '/albums/{id}/likes',
         method: 'POST',
-        handler: () => {},
+        handler: h.postAlbumLikeHandler,
+        options: {auth: options.auth},
       },
       {
         path: '/albums/{id}/likes',
         method: 'GET',
-        handler: () => {},
+        handler: h.getAlbumLikesHandler,
       },
     ];
   }

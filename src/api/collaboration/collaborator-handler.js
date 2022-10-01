@@ -25,19 +25,20 @@ class CollaborationHandler {
    * @return {any} Collaborator data
    */
   async postCollaborationHandler(request, h) {
-    const {collaborationValidator} = this._validator;
+    const collabValidator = this._validator.collaborationValidator;
 
-    collaborationValidator.validatePostCollaboration(request.payload);
+    collabValidator.validatePostCollaboration(request.payload);
 
     const {payload, auth} = request;
     const {playlistId, userId} = payload;
     const credentialId = auth.credentials?.id;
     const {playlistService, userService, collaborationService} = this._service;
-    const [,, collaborationId] = await Promise.all([
-      playlistService.verifyPlaylistOwner(playlistId, credentialId),
-      userService.verifyExistingUserWithUserId(userId),
-      collaborationService.storeCollaboration(playlistId, userId),
-    ]);
+
+    await playlistService.verifyPlaylistOwner(playlistId, credentialId);
+    await userService.verifyExistingUserWithUserId(userId);
+
+    const collaborationId =
+      await collaborationService.storeCollaboration(playlistId, userId);
 
     return h.response({
       status: 'success',
@@ -63,10 +64,8 @@ class CollaborationHandler {
     const credentialId = auth.credentials?.id;
     const {playlistService, collaborationService} = this._service;
 
-    await Promise.all([
-      playlistService.verifyPlaylistOwner(playlistId, credentialId),
-      collaborationService.deleteCollaboration(playlistId, userId),
-    ]);
+    await playlistService.verifyPlaylistOwner(playlistId, credentialId);
+    await collaborationService.deleteCollaboration(playlistId, userId);
 
     return h.response({
       status: 'success',

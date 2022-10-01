@@ -19,7 +19,7 @@ class AuthenticationService {
    *
    * @param {any} param0 Token param
    */
-  async storeToken({userId, accessToken, refershToken}) {
+  async storeToken({userId, accessToken, refreshToken}) {
     const authId = nanoid(16);
     const sql = [
       'INSERT INTO authentications(id, access_token, refresh_token, user_id)',
@@ -29,7 +29,7 @@ class AuthenticationService {
     await this._db.query(sql, [
       authId,
       accessToken,
-      refershToken,
+      refreshToken,
       userId,
     ]);
   }
@@ -39,13 +39,31 @@ class AuthenticationService {
    *
    * @param {string} accessToken Access token string
    */
-  async verifyToken(accessToken) {
+  async verifyAccessToken(accessToken) {
     const sql = [
       'SELECT id, access_token, refresh_token, user_id',
       'FROM authentications',
-      'WHERE access_token = $1',
+      'WHERE access_token=$1',
     ].join(' ');
     const auth = await this._db.query(sql, [accessToken]);
+
+    if (!auth.rowCount) {
+      throw new InvariantError('Access token tidak valid...');
+    }
+  }
+
+  /**
+   * Chck refresh token by refresh token
+   *
+   * @param {string} refreshToken Access token string
+   */
+  async verifyRefreshToken(refreshToken) {
+    const sql = [
+      'SELECT id, access_token, refresh_token, user_id',
+      'FROM authentications',
+      'WHERE refresh_token=$1',
+    ].join(' ');
+    const auth = await this._db.query(sql, [refreshToken]);
 
     if (!auth.rowCount) {
       throw new InvariantError('Refresh token tidak valid...');
@@ -53,14 +71,14 @@ class AuthenticationService {
   }
 
   /**
-   * Delete token by access token
+   * Delete token by refresh token
    *
-   * @param {string} accessToken Access token
+   * @param {string} refreshToken Access token
    */
-  async deleteToken(accessToken) {
-    const sql = 'DELETE FROM authentications WHERE access_token = $1';
+  async deleteRefreshToken(refreshToken) {
+    const sql = 'DELETE FROM authentications WHERE refresh_token=$1';
 
-    await this._db.query(sql, [accessToken]);
+    await this._db.query(sql, [refreshToken]);
   }
 }
 

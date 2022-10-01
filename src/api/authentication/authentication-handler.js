@@ -30,27 +30,23 @@ class AuthenticationHandler {
     authValidator.validatePostAuthPayload(request.payload);
 
     const {username, password} = request.payload;
-    const token =
+    const userId =
       await this._service.userService.userCrendential(username, password);
-    const userId = {id: token?.id};
-    const [jwtAccessToken, jwtRefreshToken] = await Promise.all([
-      this._service.tokenManager.generateAccessToken(userId),
-      this._service.tokenManager.generateRefreshToken(userId),
+    const [accessToken, refreshToken] = await Promise.all([
+      this._service.tokenManager.generateAccessToken({id: userId}),
+      this._service.tokenManager.generateRefreshToken({id: userId}),
     ]);
 
     await this._service.authService.storeToken({
-      accessToken: jwtRefreshToken,
-      refreshToken: jwtRefreshToken,
-      userId: userId.id,
+      accessToken,
+      refreshToken,
+      userId,
     });
 
     return h.response({
       status: 'success',
       message: 'Autentikasi berhasil!',
-      data: {
-        accessToken: jwtAccessToken,
-        refreshToken: jwtRefreshToken,
-      },
+      data: {accessToken, refreshToken},
     }).code(201);
   }
 
@@ -65,17 +61,19 @@ class AuthenticationHandler {
     this._validator.authValidator.validatePutAuthPayload(request.payload);
 
     const refreshToken = request.payload?.refreshToken;
-    const [, token] = await Promise.all([
-      this._service.authService.verifyToken(refreshToken),
-      this._service.tokenManager.verifyRefreshToken(refreshToken),
-    ]);
-    const jwtAccessToken =
-      await this._service.tokenManager.generateAccessToken(token);
+
+    await this._service.authService.verifyRefreshToken(refreshToken);
+
+    const token = this._service.tokenManager.verifyRefreshToken(refreshToken);
+    const createAccessToken =
+      await this._service.tokenManager.generateAccessToken({id: token?.id});
 
     return h.response({
       status: 'success',
       message: 'Access Token berhasil diperbarui',
-      data: {accessToken: jwtAccessToken},
+      data: {
+        accessToken: createAccessToken,
+      },
     });
   }
 
@@ -91,10 +89,8 @@ class AuthenticationHandler {
 
     const refreshToken = request.payload?.refreshToken;
 
-    await Promise.all([
-      this._service.tokenManager.verifyRefreshToken(refreshToken),
-      this._service.authService.deleteToken(refreshToken),
-    ]);
+    await this._service.tokenManager.verifyRefreshToken(refreshToken);
+    await this._service.authService.deleteRefreshToken(refreshToken);
 
     return h.response({
       status: 'success',

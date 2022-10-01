@@ -18,8 +18,8 @@ class ExportValidator {
    *
    * @param {any} payload Request payload
    */
-  validateExportSongsPayload(payload) {
-    const validation = this._shema.exportSongPayloadSchema.validate(payload);
+  validateExportPLPayload(payload) {
+    const validation = this._schema.exportPLPayloadSchema.validate(payload);
 
     if (validation.error) {
       throw new InvariantError(validation.error.message);

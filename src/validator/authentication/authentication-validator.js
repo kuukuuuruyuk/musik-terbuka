@@ -32,7 +32,7 @@ class AuthenticationValidator {
    * @param {any} payload Request payload
    */
   validatePutAuthPayload(payload) {
-    const validation = this._schema.postAuthPayloadSchema.validate(payload);
+    const validation = this._schema.putAuthPayloadSchema.validate(payload);
 
     if (validation.error) {
       throw new InvariantError(validation.error.message);
@@ -45,7 +45,8 @@ class AuthenticationValidator {
    * @param {any} payload Request payload
    */
   validateDeleteAuthPayload(payload) {
-    const validation = this._postAuthPayloadSchema.validate(payload);
+    const validation =
+      this._schema.deleteAuthPayloadSchema.validate(payload);
 
     if (validation.error) {
       throw new InvariantError(validation.error.message);

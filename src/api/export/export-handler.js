@@ -12,7 +12,7 @@ class ExportSongsHandler {
     this._service = service;
     this._validator = validator;
 
-    this.postExportSongsHandler = this.postExportSongsHandler.bind(this);
+    this.postExportPlaylistHandler = this.postExportPlaylistHandler.bind(this);
   }
 
   /**
@@ -22,22 +22,20 @@ class ExportSongsHandler {
    * @param {any} h Hapi handler
    * @return {any} Export data
    */
-  async postExportSongsHandler(request, h) {
-    this._validator.exportValidator.validateExportSongsPayload(request.payload);
+  async postExportPlaylistHandler(request, h) {
+    this._validator.exportValidator.validateExportPLPayload(request.payload);
 
-    const {params, auth} = request;
+    const {params, auth, payload} = request;
     const playlistId = params?.playlistId;
     const targetEmail = payload?.targetEmail;
     const credentialId = auth.credentials?.id;
-    const {playlistsService, exportService} = this._service;
+    const {playlistService, exportService} = this._service;
 
-    await Promise.all([
-      playlistsService.verifyPlaylistAccess(playlistId, credentialId),
-      exportService.sendMessage('export:playlists', JSON.stringify({
-        playlistId,
-        targetEmail,
-      })),
-    ]);
+    await playlistService.verifyPlaylistAccess(playlistId, credentialId);
+    await exportService.sendMessage('export:playlists', JSON.stringify({
+      playlistId,
+      targetEmail,
+    }));
 
     return h.response({
       status: 'success',

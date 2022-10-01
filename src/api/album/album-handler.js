@@ -16,6 +16,9 @@ class AlbumHandler {
     this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
     this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
     this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
+    this.postAlbumCoverHandler = this.postAlbumCoverHandler.bind(this);
+    this.postAlbumLikeHandler = this.postAlbumLikeHandler.bind(this);
+    this.getAlbumLikesHandler = this.getAlbumLikesHandler.bind(this);
   }
 
   /**
@@ -94,6 +97,84 @@ class AlbumHandler {
       status: 'success',
       message: 'Album has beed deleted!',
     });
+  }
+
+  /**
+   * Post album
+   *
+   * @param {Request} request Request payload
+   * @param {any} h Hapi server
+   * @return {any} Album data
+   */
+  async postAlbumCoverHandler(request, h) {
+    const cover = request.payload?.cover;
+    const albumId = request.params?.id;
+
+    this._validator.uploadValidator.validateUploadHeader(cover.hapi.headers);
+
+    const filename = await this._service.uploadService.uploadCover(cover);
+
+    await this._service.albumService.editAlbumCoverById(albumId, filename);
+
+    return h.response({
+      status: 'success',
+      message: 'Sampul berhasil diunggah',
+    }).code(201);
+  }
+
+  /**
+   * Post album like
+   *
+   * @param {Request} request Request payload
+   * @param {any} h Hapi server
+   * @return {any} Album data
+   */
+  async postAlbumLikeHandler(request, h) {
+    const albumId = request.params?.id;
+    const userId = request.auth.credentials?.id;
+    const albumService = this._service.albumService;
+    const checkAlbumsLike =
+      await albumService.verifyExistAlbumLikeStatusById(albumId, userId);
+
+    if (checkAlbumsLike > 0) {
+      await albumService.deleteAlbumLikeStatusById(albumId, userId);
+
+      return h.response({
+        status: 'success',
+        message: 'Berhasil melakukan dislike pada album!',
+      }).code(201);
+    } else {
+      await albumService.addAlbumLikeStatus(albumId, userId);
+
+      return h.response({
+        status: 'success',
+        message: 'Berhasil menyukai album!',
+      }).code(201);
+    }
+  }
+
+  /**
+   * Get album like
+   *
+   * @param {Reauest} request Request payload
+   * @param {any} h Hapi server
+   * @return {any} Album data
+   */
+  async getAlbumLikesHandler(request, h) {
+    const albumId = request.params?.id;
+    const {count, cache} =
+      await this._service.albumService.getAlbumLikesCountByAlbumId(albumId);
+
+    const queryData = {
+      status: 'success',
+      data: {likes: count},
+    };
+
+    if (cache) {
+      return h.response(queryData).header('X-Data-Source', 'cache');
+    }
+
+    return h.response(queryData);
   }
 }
 

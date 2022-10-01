@@ -6,11 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon ./src/server.js",
-    "prod": "node ./src/server.js",
+    "prod": "NODE_ENV=production node ./src/server.js",
     "consume": "node ./consumer/consume.js",
-    "lint": "npx eslint ./src",
-    "migrate": "node-pg-migrate",
-    "fix": "npx eslint ./src --fix"
+    "lint": "eslint ./src",
+    "lint:fix": "eslint ./src --fix",
+    "migrate": "node-pg-migrate"
   },
   "repository": {
     "type": "git",

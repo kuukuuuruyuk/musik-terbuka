@@ -17,19 +17,20 @@ class CollaborationRoute {
    */
   routes(options) {
     const h = this._h;
+    const auth = options.auth;
 
     return [
       {
         method: 'POST',
         path: '/collaborations',
         handler: h.postCollaborationHandler,
-        options: {...options},
+        options: {auth},
       },
       {
         method: 'DELETE',
         path: '/collaborations',
         handler: h.deleteCollaborationHandler,
-        options: {...options},
+        options: {auth},
       },
     ];
   }

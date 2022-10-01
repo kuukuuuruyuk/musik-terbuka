@@ -29,7 +29,9 @@ class AlbumService {
       'INSERT INTO albums(id, name, year) VALUES($1, $2, $3) RETURNING id';
     const album = await this._db.query(sql, [albumId, name, year]);
 
-    if (album.rows[0]?.id) throw new InvariantError('Gagal menambahakan album');
+    if (!album.rows[0]?.id) {
+      throw new InvariantError('Gagal menambahakan album');
+    }
 
     await this._service.cacheControlService.del('albums');
 
@@ -43,14 +45,40 @@ class AlbumService {
    * @return {any} Album
    */
   async getAlbumById(albumId) {
-    const sql = 'SELECT id, name, year FROM albums WHERE id = $1';
+    const sql =
+      'SELECT id, name, year, cover FROM albums WHERE id=$1';
     const albums = await this._db.query(sql, [albumId]);
 
     if (!albums.rowCount) {
       throw new NotFoundError('Cannot find album ID!');
     }
 
-    return albums.rows[0];
+    return albums.rows.map((item) => ({
+      id: item.id,
+      name: item.name,
+      year: item.year,
+      coverUrl: item.cover ?
+        this._service.uploadService.coverUrl(item.cover) :
+        null,
+    }))[0];
+  }
+
+  /**
+   * Show album by id
+   *
+   * @param {string} albumId Album id
+   * @return {any} Album
+   */
+  async getAlbumByIdWithoutMap(albumId) {
+    const sql =
+      'SELECT id, name, year, cover FROM albums WHERE id=$1';
+    const album = await this._db.query(sql, [albumId]);
+
+    if (!album.rowCount) {
+      throw new NotFoundError('Cannot find album ID!');
+    }
+
+    return album.rows[0];
   }
 
   /**
@@ -60,7 +88,7 @@ class AlbumService {
    * @param {any} param1 Album model
    */
   async updateAlbumById(albumId, {name, year}) {
-    const sql = 'UPDATE albums SET name = $1, year = $2 WHERE id = $3';
+    const sql = 'UPDATE albums SET name=$1, year=$2 WHERE id=$3';
     const albums = await this._db.query(sql, [name, year, albumId]);
 
     if (!albums.rowCount) throw new NotFoundError('Cannot find album ID!');
@@ -71,24 +99,24 @@ class AlbumService {
   /**
    * Delete album by id
    *
-   * @param {string} id Album id
+   * @param {string} albumId Album id
    */
-  async deleteAlbumById(id) {
-    const album = await this.getAlbumById(id);
-    const albumId = album?.id;
-    const sql = 'DELETE FROM albums WHERE id = $1';
+  async deleteAlbumById(albumId) {
+    const album =
+      await this.getAlbumByIdWithoutMap(albumId);
+    const sql = 'DELETE FROM albums WHERE id=$1';
     const hapusAlbum = await this._db.query(sql, [albumId]);
 
     if (!hapusAlbum.rowCount) {
-      throw new NotFoundError('Cannot find album ID!');
+      throw new NotFoundError('Cannot find album ID!' + hapusAlbum.rowCount);
     }
 
-    if (album?.cover) {
-      const folder = this._service.uploadService.uploadDir();
-      fs.unlink(`${folder}/${album?.cover}`);
+    const cover = album?.cover;
+    if (cover) {
+      this._service.uploadService.unlinkCover(cover);
     }
 
-    await this.cacheControlService.del('albums');
+    await this._service.cacheControlService.del('albums');
   }
 
   /**
@@ -123,8 +151,8 @@ class AlbumService {
     const sql = [
       'SELECT songs.id, songs.title, songs.performer',
       'FROM albums',
-      'INNER JOIN songs ON songs.album_id = albums.id',
-      'WHERE albums.id = $1',
+      'INNER JOIN songs ON songs.album_id=albums.id',
+      'WHERE albums.id=$1',
     ].join(' ');
     const albums = await this._db.query(sql, [albumId]);
 
@@ -138,8 +166,9 @@ class AlbumService {
    * @param {string} filename Filename for cover
    */
   async editAlbumCoverById(albumId, filename) {
-    const sql = 'UPDATE albums SET cover = $1 WHERE id = $2';
-    const album = await this._db.query(sql, [filename, albumId]);
+    const updatedAt = new Date().toISOString();
+    const sql = 'UPDATE albums SET cover=$1, updated_at=$3 WHERE id=$2';
+    const album = await this._db.query(sql, [filename, albumId, updatedAt]);
 
     if (!album.rowCount) {
       throw new NotFoundError('Cannot find album ID!');
@@ -152,7 +181,7 @@ class AlbumService {
    * @param {string} albumId Album id
    */
   async _verifyExistAlbumById(albumId) {
-    const sql = 'SELECT id FROM albums WHERE id = $1';
+    const sql = 'SELECT id FROM albums WHERE id=$1';
     const album = await this._db.query(sql, [albumId]);
 
     if (!album.rowCount) {
@@ -171,7 +200,7 @@ class AlbumService {
     await this._verifyExistAlbumById(albumId);
 
     const sql =
-      'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2';
+      'SELECT * FROM user_album_likes WHERE album_id=$1 AND user_id=$2';
     const album = await this._db.query(sql, [albumId, userId]);
 
     return album.rowCount;
@@ -184,8 +213,7 @@ class AlbumService {
    * @param {string} userId User id
    */
   async deleteAlbumLikeStatusById(albumId, userId) {
-    const sql =
-      'DELETE FROM user_album_likes WHERE album_id = $1 AND user_id = $2';
+    const sql = 'DELETE FROM user_album_likes WHERE album_id=$1 AND user_id=$2';
     const album = await this._db.query(sql, [albumId, userId]);
 
     if (!album.rowCount) {
@@ -210,7 +238,7 @@ class AlbumService {
       throw new InvariantError('Cannot like album ID!');
     }
 
-    await this._cacheControl.del(`album:like:${albumId}`);
+    await this._service.cacheControlService.del(`album:like:${albumId}`);
   }
 
   /**
@@ -226,10 +254,10 @@ class AlbumService {
 
       return {
         count: JSON.parse(likes),
-        isCache: true,
+        cache: true,
       };
     } catch {
-      const sql = 'SELECT user_id FROM user_album_likes WHERE album_id = $1';
+      const sql = 'SELECT user_id FROM user_album_likes WHERE album_id=$1';
       const likes = await this._db.query(sql, [albumId]);
 
       if (!likes.rowCount) {
@@ -243,28 +271,9 @@ class AlbumService {
 
       return {
         count: likes.rowCount,
-        isCache: false,
+        cache: false,
       };
     }
-  }
-
-  /**
-   * Upload cover file
-   *
-   * @param {any} file File stream
-   * @return {Promise} File stream
-   */
-  async uploadCover(file) {
-    const uploadFolder = this._service.uploadService.uploadDir();
-    const filename = `${nanoid(12)}${file.hapi.filename}`;
-    const directory = `${uploadFolder}/${filename}`;
-    const fileStream = fs.createWriteStream(directory);
-
-    return new Promise((resolve, reject) => {
-      fileStream.on('error', (error) => reject(error));
-      file.pipe(fileStream);
-      file.on('end', () => resolve(filename));
-    });
   }
 }
 
