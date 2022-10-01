@@ -1,4 +1,5 @@
 const {Pool} = require('pg');
+const Jwt = require('@hapi/jwt');
 const appPlugin = require('./api');
 const amqp = require('amqplib');
 const redis = require('redis');
@@ -6,6 +7,7 @@ const AWS = require('aws-sdk');
 const path = require('path');
 const validationSchema = require('./validator/validator-shcema');
 const config = require('./utils/config');
+const {InvariantError} = require('./exception/invariant-error');
 // Service
 const {AlbumService} = require('./service/album-service');
 const {SongService} = require('./service/song-service');
@@ -40,7 +42,6 @@ const JWT_APP_KEY = 'musicterbuka_jwt';
  * @param {any} server Hapi server
  */
 async function appServer(server) {
-  const options = {auth: JWT_APP_KEY};
   // Database pool
   const pool = new Pool();
 
@@ -60,16 +61,21 @@ async function appServer(server) {
   };
 
   // Redis cache control
-  const cacheControlService = new CacheControlService({client: clientRedis()});
+  const cacheControlService = new CacheControlService({redis: clientRedis()});
   // Upload service
+  const UPLOAD_STORAGE = config.app.storage;
+  const ALBUM_COVER_PATH =
+    path.resolve(__dirname, `../${UPLOAD_STORAGE}/album`);
   const uploadService = new UploadService({
-    path: path.resolve(__dirname, config.app.storage),
+    path: path.resolve(__dirname, `../${UPLOAD_STORAGE}`),
+    album: ALBUM_COVER_PATH,
+    coverUrl: `http://${config.app.host}:${config.app.port}/albums/cover`,
   });
 
   // Services
   const albumService = new AlbumService(pool, {
-    uploadService,
     cacheControlService,
+    uploadService,
   });
   const songService = new SongService(pool, {cacheControlService});
   const userService = new UserService(pool);
@@ -95,31 +101,11 @@ async function appServer(server) {
   const exportValidator = new ExportValidator(validationSchema);
   const uploadValidator = new UploadValidator(validationSchema);
 
-  // RabbitMQ producer service
-  const rabbitMqOpt = (error, _connection) => {
-    if (error) {
-      console.log('amq error');
-      console.log(error);
-      throw error;
-    }
-
-    const queue = 'hello';
-    const msg = 'Hello world';
-
-    channel.assertQueue(queue, {
-      durable: false,
-    });
-
-    channel.sendToQueue(queue, Buffer.from(msg));
-    console.log(' [x] Sent %s', msg);
-  };
-
-  const rabbitMqUrl = config.rabbitMq.server;
-  const rabbitMqConn = await amqp.connect(rabbitMqUrl, rabbitMqOpt);
-  const producerService = new ProducerService({connection: rabbitMqConn});
+  const RABBITMQ_URL = config.rabbitMq.server;
+  const producerService = new ProducerService(amqp, RABBITMQ_URL);
 
   // Token manager
-  const tokenManager = new TokenManager();
+  const tokenManager = new TokenManager(Jwt, {token: config.token});
   // s3 service
   const s3Service = new AWS.S3();
   const awsService = new AWSSimpleStorageService({s3: s3Service});
@@ -150,6 +136,9 @@ async function appServer(server) {
           throw new InvariantError('Token is invalid man');
         }
 
+        await cacheControlService.del('songs');
+        await cacheControlService.del('albums');
+        await cacheControlService.del('playlists');
         await dbService.truncateDB();
 
         return h.response({
@@ -159,6 +148,8 @@ async function appServer(server) {
       },
     },
   ]);
+
+  const options = {auth: JWT_APP_KEY};
 
   // Register local api plugin
   await server.register([
@@ -170,10 +161,15 @@ async function appServer(server) {
       },
     },
     {
-      plugin: appPlugin.albums(),
+      plugin: appPlugin.albums({
+        auth: JWT_APP_KEY,
+        handler: {
+          path: ALBUM_COVER_PATH,
+        },
+      }),
       options: {
-        service: {albumService, songService},
-        validator: {albumValidator},
+        service: {albumService, songService, uploadService, awsService},
+        validator: {albumValidator, uploadValidator},
       },
     },
     {
@@ -186,7 +182,7 @@ async function appServer(server) {
     {
       plugin: appPlugin.playlists(options),
       options: {
-        service: {playlistService, songService},
+        service: {playlistService, songService, authService, tokenManager},
         validator: {playlistValidator},
       },
     },
@@ -206,13 +202,6 @@ async function appServer(server) {
           collaborationService,
         },
         validator: {collaborationValidator},
-      },
-    },
-    {
-      plugin: appPlugin.uploadFile(),
-      options: {
-        service: {uploadService, awsService},
-        validator: {uploadValidator},
       },
     },
     {
